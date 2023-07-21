@@ -44,10 +44,11 @@ class E2EMetric(object):
             gt_strs_batch = []
 
             for temp_list in temp_gt_strs_batch:
-                t = ""
-                for index in temp_list:
-                    if index < self.max_index:
-                        t += self.label_list[index]
+                t = "".join(
+                    self.label_list[index]
+                    for index in temp_list
+                    if index < self.max_index
+                )
                 gt_strs_batch.append(t)
 
             for pred, gt_polyons, gt_strs, ignore_tags in zip(

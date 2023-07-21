@@ -73,22 +73,14 @@ class DetResizeForTest(object):
         h, w, _ = img.shape
 
         # limit the max side
-        if self.limit_type == 'max':
-            if max(h, w) > limit_side_len:
-                if h > w:
-                    ratio = float(limit_side_len) / h
-                else:
-                    ratio = float(limit_side_len) / w
-            else:
-                ratio = 1.
+        if self.limit_type == 'max' and max(h, w) > limit_side_len:
+            ratio = float(limit_side_len) / h if h > w else float(limit_side_len) / w
+        elif self.limit_type == 'max' or min(h, w) >= limit_side_len:
+            ratio = 1.
+        elif h < w:
+            ratio = float(limit_side_len) / h
         else:
-            if min(h, w) < limit_side_len:
-                if h < w:
-                    ratio = float(limit_side_len) / h
-                else:
-                    ratio = float(limit_side_len) / w
-            else:
-                ratio = 1.
+            ratio = float(limit_side_len) / w
         resize_h = int(h * ratio)
         resize_w = int(w * ratio)
 
@@ -96,9 +88,9 @@ class DetResizeForTest(object):
         resize_w = int(round(resize_w / 32) * 32)
 
         try:
-            if int(resize_w) <= 0 or int(resize_h) <= 0:
+            if resize_w <= 0 or resize_h <= 0:
                 return None, (None, None)
-            img = cv2.resize(img, (int(resize_w), int(resize_h)))
+            img = cv2.resize(img, (resize_w, resize_h))
         except:
             print(img.shape, resize_w, resize_h)
             sys.exit(0)
@@ -125,7 +117,7 @@ class DetResizeForTest(object):
         max_stride = 128
         resize_h = (resize_h + max_stride - 1) // max_stride * max_stride
         resize_w = (resize_w + max_stride - 1) // max_stride * max_stride
-        img = cv2.resize(img, (int(resize_w), int(resize_h)))
+        img = cv2.resize(img, (resize_w, resize_h))
         ratio_h = resize_h / float(h)
         ratio_w = resize_w / float(w)
 
@@ -145,8 +137,9 @@ class BaseRecLabelDecode(object):
         character_type = config['character_type']
         character_dict_path = config['character_dict_path']
         use_space_char = True
-        assert character_type in support_character_type, "Only {} are supported now but get {}".format(
-            support_character_type, character_type)
+        assert (
+            character_type in support_character_type
+        ), f"Only {support_character_type} are supported now but get {character_type}"
 
         self.beg_str = "sos"
         self.end_str = "eos"
@@ -160,8 +153,9 @@ class BaseRecLabelDecode(object):
             dict_character = list(self.character_str)
         elif character_type in support_character_type:
             self.character_str = ""
-            assert character_dict_path is not None, "character_dict_path should not be None when character_type is {}".format(
-                character_type)
+            assert (
+                character_dict_path is not None
+            ), f"character_dict_path should not be None when character_type is {character_type}"
             with open(character_dict_path, "rb") as fin:
                 lines = fin.readlines()
                 for line in lines:
@@ -263,8 +257,9 @@ class CharacterOps(object):
             dict_character = list(self.character_str)
         else:
             self.character_str = None
-        assert self.character_str is not None, \
-            "Nonsupport type of the character: {}".format(self.character_str)
+        assert (
+            self.character_str is not None
+        ), f"Nonsupport type of the character: {self.character_str}"
         self.beg_str = "sos"
         self.end_str = "eos"
         if self.loss_type == "attention":
@@ -287,11 +282,7 @@ class CharacterOps(object):
         if self.character_type == "en":
             text = text.lower()
 
-        text_list = []
-        for char in text:
-            if char not in self.dict:
-                continue
-            text_list.append(self.dict[char])
+        text_list = [self.dict[char] for char in text if char in self.dict]
         text = np.array(text_list)
         return text
 
@@ -314,8 +305,7 @@ class CharacterOps(object):
                 if idx > 0 and text_index[idx - 1] == text_index[idx]:
                     continue
             char_list.append(self.character[text_index[idx]])
-        text = ''.join(char_list)
-        return text
+        return ''.join(char_list)
 
     def get_char_num(self):
         return len(self.character)
@@ -327,12 +317,10 @@ class CharacterOps(object):
             elif beg_or_end == "end":
                 idx = np.array(self.dict[self.end_str])
             else:
-                assert False, "Unsupport type %s in get_beg_end_flag_idx"\
-                    % beg_or_end
+                assert False, f"Unsupport type {beg_or_end} in get_beg_end_flag_idx"
             return idx
         else:
-            err = "error in get_beg_end_flag_idx when using the loss %s"\
-                % (self.loss_type)
+            err = f"error in get_beg_end_flag_idx when using the loss {self.loss_type}"
             assert False, err
 
 
@@ -346,10 +334,11 @@ class OCRReader(object):
         self.rec_image_shape = image_shape
         self.character_type = char_type
         self.rec_batch_num = batch_num
-        char_ops_params = {}
-        char_ops_params["character_type"] = char_type
-        char_ops_params["character_dict_path"] = char_dict_path
-        char_ops_params['loss_type'] = 'ctc'
+        char_ops_params = {
+            "character_type": char_type,
+            "character_dict_path": char_dict_path,
+            'loss_type': 'ctc',
+        }
         self.char_ops = CharacterOps(char_ops_params)
         self.label_ops = CTCLabelDecode(char_ops_params)
 
@@ -379,7 +368,7 @@ class OCRReader(object):
         norm_img_batch = []
         max_wh_ratio = 0
         for ino in range(img_num):
-            h, w = img_list[ino].shape[0:2]
+            h, w = img_list[ino].shape[:2]
             wh_ratio = w * 1.0 / h
             max_wh_ratio = max(max_wh_ratio, wh_ratio)
 
@@ -400,6 +389,6 @@ class OCRReader(object):
             pass
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
-        text = self.label_ops.decode(
-            preds_idx, preds_prob, is_remove_duplicate=True)
-        return text
+        return self.label_ops.decode(
+            preds_idx, preds_prob, is_remove_duplicate=True
+        )

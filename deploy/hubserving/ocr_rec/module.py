@@ -80,11 +80,10 @@ class OCRRec(hub.Module):
     def read_images(self, paths=[]):
         images = []
         for img_path in paths:
-            assert os.path.isfile(
-                img_path), "The {} isn't a valid file.".format(img_path)
+            assert os.path.isfile(img_path), f"The {img_path} isn't a valid file."
             img = cv2.imread(img_path)
             if img is None:
-                logger.info("error in loading image:{}".format(img_path))
+                logger.info(f"error in loading image:{img_path}")
                 continue
             images.append(img)
         return images
@@ -108,12 +107,7 @@ class OCRRec(hub.Module):
 
         assert predicted_data != [], "There is not any image to be predicted. Please check the input data."
 
-        img_list = []
-        for img in predicted_data:
-            if img is None:
-                continue
-            img_list.append(img)
-
+        img_list = [img for img in predicted_data if img is not None]
         rec_res_final = []
         try:
             rec_res, predict_time = self.text_recognizer(img_list)
@@ -135,8 +129,7 @@ class OCRRec(hub.Module):
         Run as a service.
         """
         images_decode = [base64_to_cv2(image) for image in images]
-        results = self.predict(images_decode, **kwargs)
-        return results
+        return self.predict(images_decode, **kwargs)
 
 
 if __name__ == '__main__':

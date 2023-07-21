@@ -59,10 +59,9 @@ class DRRGLoss(nn.Layer):
         negative_loss, _ = paddle.topk(
             negative_loss.reshape([-1]), negative_count)
 
-        balance_loss = (positive_loss + paddle.sum(negative_loss)) / (
-            float(positive_count + negative_count) + 1e-5)
-
-        return balance_loss
+        return (positive_loss + paddle.sum(negative_loss)) / (
+            float(positive_count + negative_count) + 1e-5
+        )
 
     def gcn_loss(self, gcn_data):
         """CrossEntropy Loss from gcn module.
@@ -78,9 +77,7 @@ class DRRGLoss(nn.Layer):
         """
         gcn_pred, gt_labels = gcn_data
         gt_labels = gt_labels.reshape([-1])
-        loss = F.cross_entropy(gcn_pred, gt_labels)
-
-        return loss
+        return F.cross_entropy(gcn_pred, gt_labels)
 
     def bitmasks2tensor(self, bitmasks, target_sz):
         """Convert Bitmasks to tensor.
@@ -96,8 +93,6 @@ class DRRGLoss(nn.Layer):
             one kernel level.
         """
         batch_size = len(bitmasks)
-        results = []
-
         kernel = []
         for batch_inx in range(batch_size):
             mask = bitmasks[batch_inx]
@@ -108,9 +103,7 @@ class DRRGLoss(nn.Layer):
             mask = F.pad(mask, pad, mode='constant', value=0)
             kernel.append(mask)
         kernel = paddle.stack(kernel)
-        results.append(kernel)
-
-        return results
+        return [kernel]
 
     def forward(self, preds, labels):
         """Compute Drrg loss.
@@ -152,7 +145,7 @@ class DRRGLoss(nn.Layer):
                 gt[key] = self.bitmasks2tensor(gt[key], feature_sz[2:])
                 if key in ['gt_top_height_map', 'gt_bot_height_map']:
                     gt[key] = [item * downsample_ratio for item in gt[key]]
-            gt[key] = [item for item in gt[key]]
+            gt[key] = list(gt[key])
 
         scale = paddle.sqrt(1.0 / (pred_sin_map**2 + pred_cos_map**2 + 1e-8))
         pred_sin_map = pred_sin_map * scale
@@ -212,13 +205,12 @@ class DRRGLoss(nn.Layer):
         loss_gcn = self.gcn_loss(gcn_data)
 
         loss = loss_text + loss_center + loss_height + loss_sin + loss_cos + loss_gcn
-        results = dict(
+        return dict(
             loss=loss,
             loss_text=loss_text,
             loss_center=loss_center,
             loss_height=loss_height,
             loss_sin=loss_sin,
             loss_cos=loss_cos,
-            loss_gcn=loss_gcn)
-
-        return results
+            loss_gcn=loss_gcn,
+        )

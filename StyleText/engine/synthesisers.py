@@ -28,8 +28,7 @@ class ImageSynthesiser(object):
         self.output_dir = self.config["Global"]["output_dir"]
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
-        self.logger = get_logger(
-            log_file='{}/predict.log'.format(self.output_dir))
+        self.logger = get_logger(log_file=f'{self.output_dir}/predict.log')
 
         self.text_drawer = text_drawers.StdTextDrawer(self.config)
 
@@ -40,8 +39,7 @@ class ImageSynthesiser(object):
     def synth_image(self, corpus, style_input, language="en"):
         corpus_list, text_input_list = self.text_drawer.draw_text(
             corpus, language, style_input_width=style_input.shape[1])
-        synth_result = self.predictor.predict(style_input, text_input_list)
-        return synth_result
+        return self.predictor.predict(style_input, text_input_list)
 
 
 class DatasetSynthesiser(ImageSynthesiser):
@@ -59,7 +57,7 @@ class DatasetSynthesiser(ImageSynthesiser):
         self.writer = writers.SimpleWriter(self.config, self.tag)
 
     def synth_dataset(self):
-        for i in range(self.output_num):
+        for _ in range(self.output_num):
             style_data = self.style_sampler.sample()
             style_input = style_data["image"]
             corpus_language, text_input_label = self.corpus_generator.generate()

@@ -29,9 +29,9 @@ __iconpath__ = os.path.abspath(os.path.join(__dir__, '../resources/icons'))
 
 def newIcon(icon, iconSize=None):
     if iconSize is not None:
-        return QIcon(QIcon(__iconpath__ + "/" + icon + ".png").pixmap(iconSize, iconSize))
+        return QIcon(QIcon(f"{__iconpath__}/{icon}.png").pixmap(iconSize, iconSize))
     else:
-        return QIcon(__iconpath__ + "/" + icon + ".png")
+        return QIcon(f"{__iconpath__}/{icon}.png")
 
 
 def newButton(text, icon=None, slot=None):
@@ -94,7 +94,7 @@ def distance(p):
 
 def fmtShortcut(text):
     mod, key = text.split('+', 1)
-    return '<b>%s</b>+<b>%s</b>' % (mod, key)
+    return f'<b>{mod}</b>+<b>{key}</b>'
 
 
 def generateColorByText(text):
@@ -153,7 +153,7 @@ def get_rotate_crop_image(img, points):
             M, (img_crop_width, img_crop_height),
             borderMode=cv2.BORDER_REPLICATE,
             flags=cv2.INTER_CUBIC)
-        dst_img_height, dst_img_width = dst_img.shape[0:2]
+        dst_img_height, dst_img_width = dst_img.shape[:2]
         if dst_img_height * 1.0 / dst_img_width >= 1.5:
             dst_img = np.rot90(dst_img)
         return dst_img
@@ -186,9 +186,9 @@ def expand_list(merged, html_list):
             html_list[i][j] = None
     html_list[sr][sc] = ''
     if ec - sc > 1:
-        html_list[sr][sc] += " colspan={}".format(ec - sc)
+        html_list[sr][sc] += f" colspan={ec - sc}"
     if er - sr > 1:
-        html_list[sr][sc] += " rowspan={}".format(er - sr)
+        html_list[sr][sc] += f" rowspan={er - sr}"
     return html_list
 
 
@@ -201,7 +201,7 @@ def convert_token(html_list):
     for row in html_list:
         token_list.append("<tr>")
         for col in row:
-            if col == None:
+            if col is None:
                 continue
             elif col == 'td':
                 token_list.extend(["<td>", "</td>"])
@@ -209,10 +209,10 @@ def convert_token(html_list):
                 token_list.append("<td")
                 if 'colspan' in col:
                     _, n = col.split('colspan=')
-                    token_list.append(" colspan=\"{}\"".format(n[0]))
+                    token_list.append(f' colspan=\"{n[0]}\"')
                 if 'rowspan' in col:
                     _, n = col.split('rowspan=')
-                    token_list.append(" rowspan=\"{}\"".format(n[0]))
+                    token_list.append(f' rowspan=\"{n[0]}\"')
                 token_list.extend([">", "</td>"])
         token_list.append("</tr>")
     token_list.append("</tbody>")
@@ -221,106 +221,100 @@ def convert_token(html_list):
 
 
 def rebuild_html_from_ppstructure_label(label_info):
-        from html import escape
-        html_code = label_info['html']['structure']['tokens'].copy()
-        to_insert = [
-            i for i, tag in enumerate(html_code) if tag in ('<td>', '>')
-        ]
-        for i, cell in zip(to_insert[::-1], label_info['html']['cells'][::-1]):
-            if cell['tokens']:
-                cell = [
-                    escape(token) if len(token) == 1 else token
-                    for token in cell['tokens']
-                ]
-                cell = ''.join(cell)
-                html_code.insert(i + 1, cell)
-        html_code = ''.join(html_code)
-        html_code = '<html><body><table>{}</table></body></html>'.format(
-            html_code)
-        return html_code
+    from html import escape
+    html_code = label_info['html']['structure']['tokens'].copy()
+    to_insert = [
+        i for i, tag in enumerate(html_code) if tag in ('<td>', '>')
+    ]
+    for i, cell in zip(to_insert[::-1], label_info['html']['cells'][::-1]):
+        if cell['tokens']:
+            cell = [
+                escape(token) if len(token) == 1 else token
+                for token in cell['tokens']
+            ]
+            cell = ''.join(cell)
+            html_code.insert(i + 1, cell)
+    html_code = ''.join(html_code)
+    return f'<html><body><table>{html_code}</table></body></html>'
 
 
 def stepsInfo(lang='en'):
-    if lang == 'ch':
-        msg = "1. 安装与运行：使用上述命令安装与运行程序。\n" \
-              "2. 打开文件夹：在菜单栏点击 “文件” - 打开目录 选择待标记图片的文件夹.\n" \
-              "3. 自动标注：点击 ”自动标注“，使用PPOCR超轻量模型对图片文件名前图片状态为 “X” 的图片进行自动标注。\n" \
-              "4. 手动标注：点击 “矩形标注”（推荐直接在英文模式下点击键盘中的 “W”)，用户可对当前图片中模型未检出的部分进行手动" \
-              "绘制标记框。点击键盘P，则使用四点标注模式（或点击“编辑” - “四点标注”），用户依次点击4个点后，双击左键表示标注完成。\n" \
-              "5. 标记框绘制完成后，用户点击 “确认”，检测框会先被预分配一个 “待识别” 标签。\n" \
-              "6. 重新识别：将图片中的所有检测画绘制/调整完成后，点击 “重新识别”，PPOCR模型会对当前图片中的**所有检测框**重新识别。\n" \
-              "7. 内容更改：双击识别结果，对不准确的识别结果进行手动更改。\n" \
-              "8. 保存：点击 “保存”，图片状态切换为 “√”，跳转至下一张。\n" \
-              "9. 删除：点击 “删除图像”，图片将会被删除至回收站。\n" \
-              "10. 标注结果：关闭应用程序或切换文件路径后，手动保存过的标签将会被存放在所打开图片文件夹下的" \
-              "*Label.txt*中。在菜单栏点击 “PaddleOCR” - 保存识别结果后，会将此类图片的识别训练数据保存在*crop_img*文件夹下，" \
-              "识别标签保存在*rec_gt.txt*中。\n"
-
-    else:
-        msg = "1. Build and launch using the instructions above.\n" \
-              "2. Click 'Open Dir' in Menu/File to select the folder of the picture.\n" \
-              "3. Click 'Auto recognition', use PPOCR model to automatically annotate images which marked with 'X' before the file name." \
-              "4. Create Box:\n" \
-              "4.1 Click 'Create RectBox' or press 'W' in English keyboard mode to draw a new rectangle detection box. Click and release left mouse to select a region to annotate the text area.\n" \
-              "4.2 Press 'P' to enter four-point labeling mode which enables you to create any four-point shape by clicking four points with the left mouse button in succession and DOUBLE CLICK the left mouse as the signal of labeling completion.\n" \
-              "5. After the marking frame is drawn, the user clicks 'OK', and the detection frame will be pre-assigned a TEMPORARY label.\n" \
-              "6. Click re-Recognition, model will rewrite ALL recognition results in ALL detection box.\n" \
-              "7. Double click the result in 'recognition result' list to manually change inaccurate recognition results.\n" \
-              "8. Click 'Save', the image status will switch to '√',then the program automatically jump to the next.\n" \
-              "9. Click 'Delete Image' and the image will be deleted to the recycle bin.\n" \
-              "10. Labeling result: After closing the application or switching the file path, the manually saved label will be stored in *Label.txt* under the opened picture folder.\n" \
-              "    Click PaddleOCR-Save Recognition Results in the menu bar, the recognition training data of such pictures will be saved in the *crop_img* folder, and the recognition label will be saved in *rec_gt.txt*.\n"
-
-    return msg
+    return (
+        "1. 安装与运行：使用上述命令安装与运行程序。\n"
+        "2. 打开文件夹：在菜单栏点击 “文件” - 打开目录 选择待标记图片的文件夹.\n"
+        "3. 自动标注：点击 ”自动标注“，使用PPOCR超轻量模型对图片文件名前图片状态为 “X” 的图片进行自动标注。\n"
+        "4. 手动标注：点击 “矩形标注”（推荐直接在英文模式下点击键盘中的 “W”)，用户可对当前图片中模型未检出的部分进行手动"
+        "绘制标记框。点击键盘P，则使用四点标注模式（或点击“编辑” - “四点标注”），用户依次点击4个点后，双击左键表示标注完成。\n"
+        "5. 标记框绘制完成后，用户点击 “确认”，检测框会先被预分配一个 “待识别” 标签。\n"
+        "6. 重新识别：将图片中的所有检测画绘制/调整完成后，点击 “重新识别”，PPOCR模型会对当前图片中的**所有检测框**重新识别。\n"
+        "7. 内容更改：双击识别结果，对不准确的识别结果进行手动更改。\n"
+        "8. 保存：点击 “保存”，图片状态切换为 “√”，跳转至下一张。\n"
+        "9. 删除：点击 “删除图像”，图片将会被删除至回收站。\n"
+        "10. 标注结果：关闭应用程序或切换文件路径后，手动保存过的标签将会被存放在所打开图片文件夹下的"
+        "*Label.txt*中。在菜单栏点击 “PaddleOCR” - 保存识别结果后，会将此类图片的识别训练数据保存在*crop_img*文件夹下，"
+        "识别标签保存在*rec_gt.txt*中。\n"
+        if lang == 'ch'
+        else "1. Build and launch using the instructions above.\n"
+        "2. Click 'Open Dir' in Menu/File to select the folder of the picture.\n"
+        "3. Click 'Auto recognition', use PPOCR model to automatically annotate images which marked with 'X' before the file name."
+        "4. Create Box:\n"
+        "4.1 Click 'Create RectBox' or press 'W' in English keyboard mode to draw a new rectangle detection box. Click and release left mouse to select a region to annotate the text area.\n"
+        "4.2 Press 'P' to enter four-point labeling mode which enables you to create any four-point shape by clicking four points with the left mouse button in succession and DOUBLE CLICK the left mouse as the signal of labeling completion.\n"
+        "5. After the marking frame is drawn, the user clicks 'OK', and the detection frame will be pre-assigned a TEMPORARY label.\n"
+        "6. Click re-Recognition, model will rewrite ALL recognition results in ALL detection box.\n"
+        "7. Double click the result in 'recognition result' list to manually change inaccurate recognition results.\n"
+        "8. Click 'Save', the image status will switch to '√',then the program automatically jump to the next.\n"
+        "9. Click 'Delete Image' and the image will be deleted to the recycle bin.\n"
+        "10. Labeling result: After closing the application or switching the file path, the manually saved label will be stored in *Label.txt* under the opened picture folder.\n"
+        "    Click PaddleOCR-Save Recognition Results in the menu bar, the recognition training data of such pictures will be saved in the *crop_img* folder, and the recognition label will be saved in *rec_gt.txt*.\n"
+    )
 
 
 def keysInfo(lang='en'):
-    if lang == 'ch':
-        msg = "快捷键\t\t\t说明\n" \
-              "———————————————————————\n" \
-              "Ctrl + shift + R\t\t对当前图片的所有标记重新识别\n" \
-              "W\t\t\t新建矩形框\n" \
-              "Q\t\t\t新建四点框\n" \
-              "Ctrl + E\t\t编辑所选框标签\n" \
-              "Ctrl + R\t\t重新识别所选标记\n" \
-              "Ctrl + C\t\t复制并粘贴选中的标记框\n" \
-              "Ctrl + 鼠标左键\t\t多选标记框\n" \
-              "Backspace\t\t删除所选框\n" \
-              "Ctrl + V\t\t确认本张图片标记\n" \
-              "Ctrl + Shift + d\t删除本张图片\n" \
-              "D\t\t\t下一张图片\n" \
-              "A\t\t\t上一张图片\n" \
-              "Ctrl++\t\t\t缩小\n" \
-              "Ctrl--\t\t\t放大\n" \
-              "↑→↓←\t\t\t移动标记框\n" \
-              "———————————————————————\n" \
-              "注：Mac用户Command键替换上述Ctrl键"
-
-    else:
-        msg = "Shortcut Keys\t\tDescription\n" \
-              "———————————————————————\n" \
-              "Ctrl + shift + R\t\tRe-recognize all the labels\n" \
-              "\t\t\tof the current image\n" \
-              "\n" \
-              "W\t\t\tCreate a rect box\n" \
-              "Q\t\t\tCreate a four-points box\n" \
-              "Ctrl + E\t\tEdit label of the selected box\n" \
-              "Ctrl + R\t\tRe-recognize the selected box\n" \
-              "Ctrl + C\t\tCopy and paste the selected\n" \
-              "\t\t\tbox\n" \
-              "\n" \
-              "Ctrl + Left Mouse\tMulti select the label\n" \
-              "Button\t\t\tbox\n" \
-              "\n" \
-              "Backspace\t\tDelete the selected box\n" \
-              "Ctrl + V\t\tCheck image\n" \
-              "Ctrl + Shift + d\tDelete image\n" \
-              "D\t\t\tNext image\n" \
-              "A\t\t\tPrevious image\n" \
-              "Ctrl++\t\t\tZoom in\n" \
-              "Ctrl--\t\t\tZoom out\n" \
-              "↑→↓←\t\t\tMove selected box" \
-              "———————————————————————\n" \
-              "Notice:For Mac users, use the 'Command' key instead of the 'Ctrl' key"
-
-    return msg
+    return (
+        "快捷键\t\t\t说明\n"
+        "———————————————————————\n"
+        "Ctrl + shift + R\t\t对当前图片的所有标记重新识别\n"
+        "W\t\t\t新建矩形框\n"
+        "Q\t\t\t新建四点框\n"
+        "Ctrl + E\t\t编辑所选框标签\n"
+        "Ctrl + R\t\t重新识别所选标记\n"
+        "Ctrl + C\t\t复制并粘贴选中的标记框\n"
+        "Ctrl + 鼠标左键\t\t多选标记框\n"
+        "Backspace\t\t删除所选框\n"
+        "Ctrl + V\t\t确认本张图片标记\n"
+        "Ctrl + Shift + d\t删除本张图片\n"
+        "D\t\t\t下一张图片\n"
+        "A\t\t\t上一张图片\n"
+        "Ctrl++\t\t\t缩小\n"
+        "Ctrl--\t\t\t放大\n"
+        "↑→↓←\t\t\t移动标记框\n"
+        "———————————————————————\n"
+        "注：Mac用户Command键替换上述Ctrl键"
+        if lang == 'ch'
+        else "Shortcut Keys\t\tDescription\n"
+        "———————————————————————\n"
+        "Ctrl + shift + R\t\tRe-recognize all the labels\n"
+        "\t\t\tof the current image\n"
+        "\n"
+        "W\t\t\tCreate a rect box\n"
+        "Q\t\t\tCreate a four-points box\n"
+        "Ctrl + E\t\tEdit label of the selected box\n"
+        "Ctrl + R\t\tRe-recognize the selected box\n"
+        "Ctrl + C\t\tCopy and paste the selected\n"
+        "\t\t\tbox\n"
+        "\n"
+        "Ctrl + Left Mouse\tMulti select the label\n"
+        "Button\t\t\tbox\n"
+        "\n"
+        "Backspace\t\tDelete the selected box\n"
+        "Ctrl + V\t\tCheck image\n"
+        "Ctrl + Shift + d\tDelete image\n"
+        "D\t\t\tNext image\n"
+        "A\t\t\tPrevious image\n"
+        "Ctrl++\t\t\tZoom in\n"
+        "Ctrl--\t\t\tZoom out\n"
+        "↑→↓←\t\t\tMove selected box"
+        "———————————————————————\n"
+        "Notice:For Mac users, use the 'Command' key instead of the 'Ctrl' key"
+    )

@@ -48,10 +48,11 @@ class PACT(paddle.nn.Layer):
     def __init__(self):
         super(PACT, self).__init__()
         alpha_attr = paddle.ParamAttr(
-            name=self.full_name() + ".pact",
+            name=f"{self.full_name()}.pact",
             initializer=paddle.nn.initializer.Constant(value=20),
             learning_rate=1.0,
-            regularizer=paddle.regularizer.L2Decay(2e-5))
+            regularizer=paddle.regularizer.L2Decay(2e-5),
+        )
 
         self.alpha = self.create_parameter(
             shape=[1], attr=alpha_attr, dtype='float32')
@@ -122,9 +123,10 @@ def main(config, device, logger, vdl_writer):
                         0] == 'DistillationSARLoss'
                     config['Loss']['loss_config_list'][-1][
                         'DistillationSARLoss']['ignore_index'] = char_num + 1
-                    out_channels_list = {}
-                    out_channels_list['CTCLabelDecode'] = char_num
-                    out_channels_list['SARLabelDecode'] = char_num + 2
+                    out_channels_list = {
+                        'CTCLabelDecode': char_num,
+                        'SARLabelDecode': char_num + 2,
+                    }
                     config['Architecture']['Models'][key]['Head'][
                         'out_channels_list'] = out_channels_list
                 else:
@@ -144,9 +146,10 @@ def main(config, device, logger, vdl_writer):
             else:
                 config['Loss']['loss_config_list'][1]['SARLoss'][
                     'ignore_index'] = char_num + 1
-            out_channels_list = {}
-            out_channels_list['CTCLabelDecode'] = char_num
-            out_channels_list['SARLabelDecode'] = char_num + 2
+            out_channels_list = {
+                'CTCLabelDecode': char_num,
+                'SARLabelDecode': char_num + 2,
+            }
             config['Architecture']['Head'][
                 'out_channels_list'] = out_channels_list
         else:  # base rec model
@@ -156,7 +159,7 @@ def main(config, device, logger, vdl_writer):
             config['Loss']['ignore_index'] = char_num - 1
     model = build_model(config['Architecture'])
 
-    pre_best_model_dict = dict()
+    pre_best_model_dict = {}
     # load fp32 model to begin quantization
     pre_best_model_dict = load_model(config, model, None, config['Architecture']["model_type"])
 
@@ -188,8 +191,9 @@ def main(config, device, logger, vdl_writer):
     # build metric
     eval_class = build_metric(config['Metric'])
 
-    logger.info('train dataloader has {} iters, valid dataloader has {} iters'.
-                format(len(train_dataloader), len(valid_dataloader)))
+    logger.info(
+        f'train dataloader has {len(train_dataloader)} iters, valid dataloader has {len(valid_dataloader)} iters'
+    )
 
     # start train
     program.train(config, train_dataloader, valid_dataloader, device, model,

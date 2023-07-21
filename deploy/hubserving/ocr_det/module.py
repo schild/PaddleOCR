@@ -82,11 +82,10 @@ class OCRDet(hub.Module):
     def read_images(self, paths=[]):
         images = []
         for img_path in paths:
-            assert os.path.isfile(
-                img_path), "The {} isn't a valid file.".format(img_path)
+            assert os.path.isfile(img_path), f"The {img_path} isn't a valid file."
             img = cv2.imread(img_path)
             if img is None:
-                logger.info("error in loading image:{}".format(img_path))
+                logger.info(f"error in loading image:{img_path}")
                 continue
             images.append(img)
         return images
@@ -117,13 +116,12 @@ class OCRDet(hub.Module):
                 all_results.append([])
                 continue
             dt_boxes, elapse = self.text_detector(img)
-            logger.info("Predict time : {}".format(elapse))
+            logger.info(f"Predict time : {elapse}")
 
-            rec_res_final = []
-            for dno in range(len(dt_boxes)):
-                rec_res_final.append({
-                    'text_region': dt_boxes[dno].astype(np.int).tolist()
-                })
+            rec_res_final = [
+                {'text_region': dt_boxes[dno].astype(np.int).tolist()}
+                for dno in range(len(dt_boxes))
+            ]
             all_results.append(rec_res_final)
         return all_results
 
@@ -133,8 +131,7 @@ class OCRDet(hub.Module):
         Run as a service.
         """
         images_decode = [base64_to_cv2(image) for image in images]
-        results = self.predict(images_decode, **kwargs)
-        return results
+        return self.predict(images_decode, **kwargs)
 
 
 if __name__ == '__main__':

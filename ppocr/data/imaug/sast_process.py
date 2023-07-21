@@ -57,24 +57,23 @@ class SASTProcessTrain(object):
         """
         point_num = poly.shape[0]
         min_area_quad = np.zeros((4, 2), dtype=np.float32)
-        if True:
-            rect = cv2.minAreaRect(poly.astype(
-                np.int32))  # (center (x,y), (width, height), angle of rotation)
-            center_point = rect[0]
-            box = np.array(cv2.boxPoints(rect))
+        rect = cv2.minAreaRect(poly.astype(
+            np.int32))  # (center (x,y), (width, height), angle of rotation)
+        center_point = rect[0]
+        box = np.array(cv2.boxPoints(rect))
 
-            first_point_idx = 0
-            min_dist = 1e4
-            for i in range(4):
-                dist = np.linalg.norm(box[(i + 0) % 4] - poly[0]) + \
+        first_point_idx = 0
+        min_dist = 1e4
+        for i in range(4):
+            dist = np.linalg.norm(box[(i + 0) % 4] - poly[0]) + \
                     np.linalg.norm(box[(i + 1) % 4] - poly[point_num // 2 - 1]) + \
                     np.linalg.norm(box[(i + 2) % 4] - poly[point_num // 2]) + \
                     np.linalg.norm(box[(i + 3) % 4] - poly[-1])
-                if dist < min_dist:
-                    min_dist = dist
-                    first_point_idx = i
-            for i in range(4):
-                min_area_quad[i] = box[(first_point_idx + i) % 4]
+            if dist < min_dist:
+                min_dist = dist
+                first_point_idx = i
+        for i in range(4):
+            min_area_quad[i] = box[(first_point_idx + i) % 4]
 
         return min_area_quad
 
@@ -158,7 +157,7 @@ class SASTProcessTrain(object):
         w_axis = np.where(w_array == 0)[0]
         if len(h_axis) == 0 or len(w_axis) == 0:
             return im, polys, tags, hv_tags
-        for i in range(max_tries):
+        for _ in range(max_tries):
             xx = np.random.choice(w_axis, size=2)
             xmin = np.min(xx) - pad_w
             xmax = np.max(xx) - pad_w
@@ -172,12 +171,12 @@ class SASTProcessTrain(object):
             # if xmax - xmin < ARGS.min_crop_side_ratio * w or \
             #   ymax - ymin < ARGS.min_crop_side_ratio * h:
             if xmax - xmin < self.min_crop_size or \
-            ymax - ymin < self.min_crop_size:
+                ymax - ymin < self.min_crop_size:
                 # area too small
                 continue
             if polys.shape[0] != 0:
                 poly_axis_in_area = (polys[:, :, 0] >= xmin) & (polys[:, :, 0] <= xmax) \
-                                    & (polys[:, :, 1] >= ymin) & (polys[:, :, 1] <= ymax)
+                                        & (polys[:, :, 1] >= ymin) & (polys[:, :, 1] <= ymax)
                 selected_polys = np.where(
                     np.sum(poly_axis_in_area, axis=1) == 4)[0]
             else:
@@ -186,7 +185,7 @@ class SASTProcessTrain(object):
                 # no text in this area
                 if crop_background:
                     return im[ymin : ymax + 1, xmin : xmax + 1, :], \
-                        polys[selected_polys], tags[selected_polys], hv_tags[selected_polys]
+                            polys[selected_polys], tags[selected_polys], hv_tags[selected_polys]
                 else:
                     continue
             im = im[ymin:ymax + 1, xmin:xmax + 1, :]
@@ -237,8 +236,7 @@ class SASTProcessTrain(object):
             quad_h = (np.linalg.norm(quad[0] - quad[3]) +
                       np.linalg.norm(quad[2] - quad[1])) / 2.0
             height_list.append(quad_h)
-        average_height = max(sum(height_list) / len(height_list), 1.0)
-        return average_height
+        return max(sum(height_list) / len(height_list), 1.0)
 
     def generate_tcl_label(self,
                            hw,
@@ -266,7 +264,7 @@ class SASTProcessTrain(object):
         direction_map = np.ones((h, w, 3)) * np.array([0, 0, 1]).reshape(
             [1, 1, 3]).astype(np.float32)
 
-        for poly_idx, poly_tag in enumerate(zip(polys, tags)):
+        for poly_tag in zip(polys, tags):
             poly = poly_tag[0]
             tag = poly_tag[1]
 
@@ -280,7 +278,7 @@ class SASTProcessTrain(object):
                 np.linalg.norm(min_area_quad[2] - min_area_quad[3]))
 
             if min(min_area_quad_h, min_area_quad_w) < self.min_text_size * ds_ratio \
-                or min(min_area_quad_h, min_area_quad_w) > self.max_text_size * ds_ratio:
+                    or min(min_area_quad_h, min_area_quad_w) > self.max_text_size * ds_ratio:
                 continue
 
             if tag:
@@ -325,7 +323,7 @@ class SASTProcessTrain(object):
         poly_mask = np.zeros((h, w), dtype=np.float32)
 
         tvo_map = np.ones((9, h, w), dtype=np.float32)
-        tvo_map[0:-1:2] = np.tile(np.arange(0, w), (h, 1))
+        tvo_map[:-1:2] = np.tile(np.arange(0, w), (h, 1))
         tvo_map[1:-1:2] = np.tile(np.arange(0, w), (h, 1)).T
         poly_tv_xy_map = np.zeros((8, h, w), dtype=np.float32)
 
@@ -632,7 +630,6 @@ class SASTProcessTrain(object):
         """
         Split poly into quads.
         """
-        quad_list = []
         point_num = poly.shape[0]
 
         # point pair
@@ -642,11 +639,10 @@ class SASTProcessTrain(object):
             point_pair_list.append(point_pair)
 
         quad_num = point_num // 2 - 1
-        for idx in range(quad_num):
-            # reshape and adjust to clock-wise
-            quad_list.append((np.array(point_pair_list)[[idx, idx + 1]]
-                              ).reshape(4, 2)[[0, 2, 3, 1]])
-
+        quad_list = [
+            (np.array(point_pair_list)[[idx, idx + 1]]).reshape(4, 2)[[0, 2, 3, 1]]
+            for idx in range(quad_num)
+        ]
         return np.array(quad_list)
 
     def __call__(self, data):

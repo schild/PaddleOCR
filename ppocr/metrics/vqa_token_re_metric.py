@@ -46,18 +46,15 @@ class VQAReTokenMetric(object):
                 entitie_label_list = entitie_list[1:entitie_list[0, 2] + 1, 2]
                 for head, tail in zip(relation_list[1:head_len + 1, 0],
                                       relation_list[1:head_len + 1, 1]):
-                    rel = {}
-                    rel["head_id"] = head
-                    rel["head"] = (entitie_start_list[head],
-                                   entitie_end_list[head])
-                    rel["head_type"] = entitie_label_list[head]
-
-                    rel["tail_id"] = tail
-                    rel["tail"] = (entitie_start_list[tail],
-                                   entitie_end_list[tail])
-                    rel["tail_type"] = entitie_label_list[tail]
-
-                    rel["type"] = 1
+                    rel = {
+                        "head_id": head,
+                        "head": (entitie_start_list[head], entitie_end_list[head]),
+                        "head_type": entitie_label_list[head],
+                        "tail_id": tail,
+                        "tail": (entitie_start_list[tail], entitie_end_list[tail]),
+                        "tail_type": entitie_label_list[tail],
+                        "type": 1,
+                    }
                     rel_sent.append(rel)
             gt_relations.append(rel_sent)
         re_metrics = self.re_score(
@@ -93,7 +90,7 @@ class VQAReTokenMetric(object):
 
         assert mode in ["strict", "boundaries"]
 
-        relation_types = [v for v in [0, 1] if not v == 0]
+        relation_types = [v for v in [0, 1] if v != 0]
         scores = {
             rel: {
                 "tp": 0,
@@ -105,14 +102,21 @@ class VQAReTokenMetric(object):
 
         # Count GT relations and Predicted relations
         n_sents = len(gt_relations)
-        n_rels = sum([len([rel for rel in sent]) for sent in gt_relations])
-        n_found = sum([len([rel for rel in sent]) for sent in pred_relations])
+        n_rels = sum(len(list(sent)) for sent in gt_relations)
+        n_found = sum(len(list(sent)) for sent in pred_relations)
 
         # Count TP, FP and FN per type
         for pred_sent, gt_sent in zip(pred_relations, gt_relations):
             for rel_type in relation_types:
                 # strict mode takes argument types into account
-                if mode == "strict":
+                if mode == "boundaries":
+                    pred_rels = {(rel["head"], rel["tail"])
+                                 for rel in pred_sent
+                                 if rel["type"] == rel_type}
+                    gt_rels = {(rel["head"], rel["tail"])
+                               for rel in gt_sent if rel["type"] == rel_type}
+
+                elif mode == "strict":
                     pred_rels = {(rel["head"], rel["head_type"], rel["tail"],
                                   rel["tail_type"])
                                  for rel in pred_sent
@@ -121,21 +125,13 @@ class VQAReTokenMetric(object):
                                 rel["tail_type"])
                                for rel in gt_sent if rel["type"] == rel_type}
 
-                # boundaries mode only takes argument spans into account
-                elif mode == "boundaries":
-                    pred_rels = {(rel["head"], rel["tail"])
-                                 for rel in pred_sent
-                                 if rel["type"] == rel_type}
-                    gt_rels = {(rel["head"], rel["tail"])
-                               for rel in gt_sent if rel["type"] == rel_type}
-
                 scores[rel_type]["tp"] += len(pred_rels & gt_rels)
                 scores[rel_type]["fp"] += len(pred_rels - gt_rels)
                 scores[rel_type]["fn"] += len(gt_rels - pred_rels)
 
         # Compute per entity Precision / Recall / F1
-        for rel_type in scores.keys():
-            if scores[rel_type]["tp"]:
+        for rel_type, value in scores.items():
+            if value["tp"]:
                 scores[rel_type]["p"] = scores[rel_type]["tp"] / (
                     scores[rel_type]["fp"] + scores[rel_type]["tp"])
                 scores[rel_type]["r"] = scores[rel_type]["tp"] / (
@@ -143,17 +139,20 @@ class VQAReTokenMetric(object):
             else:
                 scores[rel_type]["p"], scores[rel_type]["r"] = 0, 0
 
-            if not scores[rel_type]["p"] + scores[rel_type]["r"] == 0:
-                scores[rel_type]["f1"] = (
-                    2 * scores[rel_type]["p"] * scores[rel_type]["r"] /
-                    (scores[rel_type]["p"] + scores[rel_type]["r"]))
-            else:
-                scores[rel_type]["f1"] = 0
-
+            scores[rel_type]["f1"] = (
+                (
+                    2
+                    * scores[rel_type]["p"]
+                    * scores[rel_type]["r"]
+                    / (scores[rel_type]["p"] + scores[rel_type]["r"])
+                )
+                if scores[rel_type]["p"] + scores[rel_type]["r"] != 0
+                else 0
+            )
         # Compute micro F1 Scores
-        tp = sum([scores[rel_type]["tp"] for rel_type in relation_types])
-        fp = sum([scores[rel_type]["fp"] for rel_type in relation_types])
-        fn = sum([scores[rel_type]["fn"] for rel_type in relation_types])
+        tp = sum(scores[rel_type]["tp"] for rel_type in relation_types)
+        fp = sum(scores[rel_type]["fp"] for rel_type in relation_types)
+        fn = sum(scores[rel_type]["fn"] for rel_type in relation_types)
 
         if tp:
             precision = tp / (tp + fp)

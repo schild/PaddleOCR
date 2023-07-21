@@ -113,11 +113,12 @@ class ResNet31(nn.Layer):
 
         conv_weight_attr = None
         bn_weight_attr = None
-        
+
         if init_type is not None:
             support_dict = ['KaimingNormal']
             assert init_type in support_dict, Exception(
-            "resnet31 only support {}".format(support_dict))
+                f"resnet31 only support {support_dict}"
+            )
             conv_weight_attr = nn.initializer.KaimingNormal()
             bn_weight_attr = ParamAttr(initializer=nn.initializer.Uniform(), learning_rate=1)
 
@@ -226,6 +227,6 @@ class ResNet31(nn.Layer):
             outs.append(x)
 
         if self.out_indices is not None:
-            return tuple([outs[i] for i in self.out_indices])
+            return tuple(outs[i] for i in self.out_indices)
 
         return x

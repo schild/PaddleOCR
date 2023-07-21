@@ -26,13 +26,11 @@ __all__ = ["build_model", "apply_to_static"]
 
 def build_model(config):
     config = copy.deepcopy(config)
-    if not "name" in config:
-        arch = BaseModel(config)
-    else:
-        name = config.pop("name")
-        mod = importlib.import_module(__name__)
-        arch = getattr(mod, name)(config)
-    return arch
+    if "name" not in config:
+        return BaseModel(config)
+    name = config.pop("name")
+    mod = importlib.import_module(__name__)
+    return getattr(mod, name)(config)
 
 
 def apply_to_static(model, config, logger):
@@ -64,5 +62,5 @@ def apply_to_static(model, config, logger):
         ])
 
     model = to_static(model, input_spec=specs)
-    logger.info("Successfully to apply @to_static with specs: {}".format(specs))
+    logger.info(f"Successfully to apply @to_static with specs: {specs}")
     return model

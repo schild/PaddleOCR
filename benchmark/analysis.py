@@ -86,11 +86,7 @@ def parse_args():
 
 def _is_number(num):
     pattern = re.compile(r'^[-+]?[-0-9]\d*\.\d*|[-+]?\.?[0-9]\d*$')
-    result = pattern.match(num)
-    if result:
-        return True
-    else:
-        return False
+    return bool(result := pattern.match(num))
 
 
 class TimeAnalyzer(object):
@@ -139,19 +135,19 @@ class TimeAnalyzer(object):
 
                     # Distil the result from the picked string.
                     if not self.range:
-                        result = result[0:]
+                        result = result[:]
                     elif _is_number(self.range):
-                        result = result[0:int(self.range)]
+                        result = result[:int(self.range)]
                     else:
                         result = result[int(self.range.split(":")[0]):int(
                             self.range.split(":")[1])]
                     self.records.append(float(result))
                 except Exception as exc:
-                    print("line is: {}; separator={}; position={}".format(
-                        line, self.separator, self.position))
+                    print(f"line is: {line}; separator={self.separator}; position={self.position}")
 
-        print("Extract {} records: separator={}; position={}".format(
-            len(self.records), self.separator, self.position))
+        print(
+            f"Extract {len(self.records)} records: separator={self.separator}; position={self.position}"
+        )
 
     def _get_fps(self,
                  mode,
@@ -243,7 +239,7 @@ class TimeAnalyzer(object):
                 print("\tMin: %.3f %s" % (skip_min, fps_unit))
                 print("\tMax: %.3f %s" % (skip_max, fps_unit))
                 print("\tFPS: %.3f %s" % (fps_skipped, fps_unit))
-        elif mode == 1 or mode == 3:
+        elif mode in [1, 3]:
             print("average latency of %d steps, skip 0 step:" % count)
             print("\tAvg: %.3f steps/s" % avg_of_records)
             print("\tFPS: %.3f %s" % (fps, fps_unit))
@@ -254,7 +250,7 @@ class TimeAnalyzer(object):
                 print("\tMin: %.3f steps/s" % skip_min)
                 print("\tMax: %.3f steps/s" % skip_max)
                 print("\tFPS: %.3f %s" % (fps_skipped, fps_unit))
-        elif mode == 0 or mode == 2:
+        elif mode in [0, 2]:
             print("average latency of %d steps, skip 0 step:" % count)
             print("\tAvg: %.3f s/step" % avg_of_records)
             print("\tFPS: %.3f %s" % (fps, fps_unit))
@@ -271,17 +267,17 @@ class TimeAnalyzer(object):
 
 if __name__ == "__main__":
     args = parse_args()
-    run_info = dict()
-    run_info["log_file"] = args.filename
-    run_info["model_name"] = args.model_name
-    run_info["mission_name"] = args.mission_name
-    run_info["direction_id"] = args.direction_id
-    run_info["run_mode"] = args.run_mode
-    run_info["index"] = args.index
-    run_info["gpu_num"] = args.gpu_num
-    run_info["FINAL_RESULT"] = 0
-    run_info["JOB_FAIL_FLAG"] = 0
-
+    run_info = {
+        "log_file": args.filename,
+        "model_name": args.model_name,
+        "mission_name": args.mission_name,
+        "direction_id": args.direction_id,
+        "run_mode": args.run_mode,
+        "index": args.index,
+        "gpu_num": args.gpu_num,
+        "FINAL_RESULT": 0,
+        "JOB_FAIL_FLAG": 0,
+    }
     try:
         if args.index == 1:
             if args.gpu_num == 1:
@@ -342,5 +338,4 @@ if __name__ == "__main__":
             print("Not support!")
     except Exception:
         traceback.print_exc()
-    print("{}".format(json.dumps(run_info))
-          )  # it's required, for the log file path  insert to the database
+    print(f"{json.dumps(run_info)}")

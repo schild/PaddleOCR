@@ -64,10 +64,7 @@ def gen_counting_label(labels, channel, tag):
     b, t = labels.shape
     counting_labels = np.zeros([b, channel])
 
-    if tag:
-        ignore = [0, 1, 107, 108, 109, 110]
-    else:
-        ignore = []
+    ignore = [0, 1, 107, 108, 109, 110] if tag else []
     for i in range(b):
         for j in range(t):
             k = labels[i][j]

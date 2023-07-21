@@ -679,8 +679,7 @@ def hsv_aug(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     delta = 0.001 * random.random() * flag()
     hsv[:, :, 2] = hsv[:, :, 2] * (1 + delta)
-    new_img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    return new_img
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
 
 def blur(img):
@@ -688,10 +687,7 @@ def blur(img):
     blur
     """
     h, w, _ = img.shape
-    if h > 10 and w > 10:
-        return cv2.GaussianBlur(img, (5, 5), 1)
-    else:
-        return img
+    return cv2.GaussianBlur(img, (5, 5), 1) if h > 10 and w > 10 else img
 
 
 def jitter(img):
@@ -705,9 +701,7 @@ def jitter(img):
         src_img = img.copy()
         for i in range(s):
             img[i:, i:, :] = src_img[:w - i, :h - i, :]
-        return img
-    else:
-        return img
+    return img
 
 
 def add_gasuss_noise(image, mean=0, var=0.1):
@@ -729,7 +723,7 @@ def get_crop(image):
     h, w, _ = image.shape
     top_min = 1
     top_max = 8
-    top_crop = int(random.randint(top_min, top_max))
+    top_crop = random.randint(top_min, top_max)
     top_crop = min(top_crop, h - 1)
     crop_img = image.copy()
     ratio = random.randint(0, 1)
@@ -820,6 +814,10 @@ def get_warpAffine(config):
     get_warpAffine
     """
     anglez = config.anglez
-    rz = np.array([[np.cos(rad(anglez)), np.sin(rad(anglez)), 0],
-                   [-np.sin(rad(anglez)), np.cos(rad(anglez)), 0]], np.float32)
-    return rz
+    return np.array(
+        [
+            [np.cos(rad(anglez)), np.sin(rad(anglez)), 0],
+            [-np.sin(rad(anglez)), np.cos(rad(anglez)), 0],
+        ],
+        np.float32,
+    )

@@ -79,13 +79,13 @@ class BaseModel(nn.Layer):
 
     def forward(self, x, data=None):
 
-        y = dict()
+        y = {}
         if self.use_transform:
             x = self.transform(x)
         if self.use_backbone:
             x = self.backbone(x)
         if isinstance(x, dict):
-            y.update(x)
+            y |= x
         else:
             y["backbone_out"] = x
         final_name = "backbone_out"
@@ -107,12 +107,13 @@ class BaseModel(nn.Layer):
             else:
                 y["head_out"] = x
             final_name = "head_out"
-        if self.return_all_feats:
-            if self.training:
-                return y
-            elif isinstance(x, dict):
-                return x
-            else:
-                return {final_name: x}
-        else:
+        if self.return_all_feats and self.training:
+            return y
+        elif (
+            self.return_all_feats
+            and isinstance(x, dict)
+            or not self.return_all_feats
+        ):
             return x
+        else:
+            return {final_name: x}

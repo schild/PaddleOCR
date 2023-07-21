@@ -51,10 +51,11 @@ class MakePseGt(object):
             rate = 1.0 - (1.0 - self.min_shrink_ratio) / (self.kernel_num - 1
                                                           ) * i
             text_kernel, ignore_tags = self.generate_kernel(
-                image.shape[0:2], rate, text_polys, ignore_tags)
+                image.shape[:2], rate, text_polys, ignore_tags
+            )
             gt_kernels.append(text_kernel)
 
-        training_mask = np.ones(image.shape[0:2], dtype='uint8')
+        training_mask = np.ones(image.shape[:2], dtype='uint8')
         for i in range(text_polys.shape[0]):
             if ignore_tags[i]:
                 cv2.fillPoly(training_mask,
@@ -66,7 +67,7 @@ class MakePseGt(object):
 
         data['image'] = image
         data['polys'] = text_polys
-        data['gt_kernels'] = gt_kernels[0:]
+        data['gt_kernels'] = gt_kernels[:]
         data['gt_text'] = gt_kernels[0]
         data['mask'] = training_mask.astype('float32')
         return data

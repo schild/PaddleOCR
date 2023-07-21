@@ -86,12 +86,12 @@ class MobileNetV3(nn.Layer):
             ]
             cls_ch_squeeze = 576
         else:
-            raise NotImplementedError("mode[" + model_name +
-                                      "_model] is not implemented!")
+            raise NotImplementedError(f"mode[{model_name}_model] is not implemented!")
 
         supported_scale = [0.35, 0.5, 0.75, 1.0, 1.25]
-        assert scale in supported_scale, \
-            "supported scale are {} but input scale is {}".format(supported_scale, scale)
+        assert (
+            scale in supported_scale
+        ), f"supported scale are {supported_scale} but input scale is {scale}"
         inplanes = 16
         # conv1
         self.conv = ConvBNLayer(
@@ -107,9 +107,8 @@ class MobileNetV3(nn.Layer):
         self.stages = []
         self.out_channels = []
         block_list = []
-        i = 0
         inplanes = make_divisible(inplanes * scale)
-        for (k, exp, c, se, nl, s) in cfg:
+        for i, (k, exp, c, se, nl, s) in enumerate(cfg):
             se = se and not self.disable_se
             start_idx = 2 if model_name == 'large' else 0
             if s == 2 and i > start_idx:
@@ -126,7 +125,6 @@ class MobileNetV3(nn.Layer):
                     use_se=se,
                     act=nl))
             inplanes = make_divisible(scale * c)
-            i += 1
         block_list.append(
             ConvBNLayer(
                 in_channels=inplanes,
@@ -140,7 +138,7 @@ class MobileNetV3(nn.Layer):
         self.stages.append(nn.Sequential(*block_list))
         self.out_channels.append(make_divisible(scale * cls_ch_squeeze))
         for i, stage in enumerate(self.stages):
-            self.add_sublayer(sublayer=stage, name="stage{}".format(i))
+            self.add_sublayer(sublayer=stage, name=f"stage{i}")
 
     def forward(self, x):
         x = self.conv(x)
@@ -184,8 +182,7 @@ class ConvBNLayer(nn.Layer):
             elif self.act == "hardswish":
                 x = F.hardswish(x)
             else:
-                print("The activation function({}) is selected incorrectly.".
-                      format(self.act))
+                print(f"The activation function({self.act}) is selected incorrectly.")
                 exit()
         return x
 

@@ -66,8 +66,8 @@ class BalanceLoss(nn.Layer):
                 'CrossEntropy', 'DiceLoss', 'Euclidean', 'BCELoss', 'MaskL1Loss'
             ]
             raise Exception(
-                "main_loss_type in BalanceLoss() can only be one of {}".format(
-                    loss_type))
+                f"main_loss_type in BalanceLoss() can only be one of {loss_type}"
+            )
 
     def forward(self, pred, gt, mask=None):
         """
@@ -100,10 +100,7 @@ class BalanceLoss(nn.Layer):
                 positive_count + negative_count + self.eps)
         else:
             balance_loss = positive_loss.sum() / (positive_count + self.eps)
-        if self.return_origin:
-            return balance_loss, loss
-
-        return balance_loss
+        return (balance_loss, loss) if self.return_origin else balance_loss
 
 
 class DiceLoss(nn.Layer):
@@ -149,5 +146,4 @@ class BCELoss(nn.Layer):
         self.reduction = reduction
 
     def forward(self, input, label, mask=None, weight=None, name=None):
-        loss = F.binary_cross_entropy(input, label, reduction=self.reduction)
-        return loss
+        return F.binary_cross_entropy(input, label, reduction=self.reduction)

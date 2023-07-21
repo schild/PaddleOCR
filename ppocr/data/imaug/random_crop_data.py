@@ -30,18 +30,14 @@ def is_poly_in_rect(poly, x, y, w, h):
     poly = np.array(poly)
     if poly[:, 0].min() < x or poly[:, 0].max() > x + w:
         return False
-    if poly[:, 1].min() < y or poly[:, 1].max() > y + h:
-        return False
-    return True
+    return poly[:, 1].min() >= y and poly[:, 1].max() <= y + h
 
 
 def is_poly_outside_rect(poly, x, y, w, h):
     poly = np.array(poly)
     if poly[:, 0].max() < x or poly[:, 0].min() > x + w:
         return True
-    if poly[:, 1].max() < y or poly[:, 1].min() > y + h:
-        return True
-    return False
+    return poly[:, 1].max() < y or poly[:, 1].min() > y + h
 
 
 def split_regions(axis):
@@ -98,11 +94,12 @@ def crop_area(im, text_polys, min_crop_side_ratio, max_tries):
     h_regions = split_regions(h_axis)
     w_regions = split_regions(w_axis)
 
-    for i in range(max_tries):
-        if len(w_regions) > 1:
-            xmin, xmax = region_wise_random_select(w_regions, w)
-        else:
-            xmin, xmax = random_select(w_axis, w)
+    for _ in range(max_tries):
+        xmin, xmax = (
+            region_wise_random_select(w_regions, w)
+            if len(w_regions) > 1
+            else random_select(w_axis, w)
+        )
         if len(h_regions) > 1:
             ymin, ymax = region_wise_random_select(h_regions, h)
         else:
@@ -190,7 +187,7 @@ class RandomCropImgMask(object):
     def __call__(self, data):
         image = data['image']
 
-        h, w = image.shape[0:2]
+        h, w = image.shape[:2]
         th, tw = self.size
         if w == tw and h == th:
             return data

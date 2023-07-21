@@ -34,14 +34,14 @@ class PGDataSet(Dataset):
         data_source_num = len(label_file_list)
         ratio_list = dataset_config.get("ratio_list", [1.0])
         if isinstance(ratio_list, (float, int)):
-            ratio_list = [float(ratio_list)] * int(data_source_num)
+            ratio_list = [float(ratio_list)] * data_source_num
         assert len(
             ratio_list
         ) == data_source_num, "The length of ratio_list should be the same as the file_list."
         self.data_dir = dataset_config['data_dir']
         self.do_shuffle = loader_config['shuffle']
 
-        logger.info("Initialize indexs of datasets:%s" % label_file_list)
+        logger.info(f"Initialize indexs of datasets:{label_file_list}")
         self.data_lines = self.get_image_info_list(label_file_list, ratio_list)
         self.data_idx_order_list = list(range(len(self.data_lines)))
         if mode.lower() == "train":
@@ -88,15 +88,15 @@ class PGDataSet(Dataset):
                     img_id = 0
             data = {'img_path': img_path, 'label': label, 'img_id': img_id}
             if not os.path.exists(img_path):
-                raise Exception("{} does not exist!".format(img_path))
+                raise Exception(f"{img_path} does not exist!")
             with open(data['img_path'], 'rb') as f:
                 img = f.read()
                 data['image'] = img
             outs = transform(data, self.ops)
         except Exception as e:
             self.logger.error(
-                "When parsing line {}, error happened with msg: {}".format(
-                    self.data_idx_order_list[idx], e))
+                f"When parsing line {self.data_idx_order_list[idx]}, error happened with msg: {e}"
+            )
             outs = None
         if outs is None:
             return self.__getitem__(np.random.randint(self.__len__()))

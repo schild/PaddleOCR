@@ -88,8 +88,7 @@ class Shape(object):
         sinTheta = math.sin(theta)
         pResx = cosTheta * order.x() + sinTheta * order.y()
         pResy = - sinTheta * order.x() + cosTheta * order.y()
-        pRes = QPointF(self.center.x() + pResx, self.center.y() + pResy)
-        return pRes
+        return QPointF(self.center.x() + pResx, self.center.y() + pResy)
 
     def close(self):
         self.center = QPointF((self.points[0].x() + self.points[2].x()) / 2,
@@ -97,9 +96,7 @@ class Shape(object):
         self._closed = True
 
     def reachMaxPoints(self):
-        if len(self.points) >= 4:
-            return True
-        return False
+        return len(self.points) >= 4
 
     def addPoint(self, point):
         if self.reachMaxPoints() and self.closeEnough(self.points[0], point):
@@ -111,9 +108,7 @@ class Shape(object):
         return distance(p1 - p2) < self.epsilon
 
     def popPoint(self):
-        if self.points:
-            return self.points.pop()
-        return None
+        return self.points.pop() if self.points else None
 
     def isClosed(self):
         return self._closed
@@ -122,72 +117,71 @@ class Shape(object):
         self._closed = False
 
     def paint(self, painter):
-        if self.points:
-            color = self.select_line_color if self.selected else self.line_color
-            pen = QPen(color)
-            # Try using integer sizes for smoother drawing(?)
-            # pen.setWidth(max(1, int(round(2.0 / self.scale))))
-            painter.setPen(pen)
+        if not self.points:
+            return
+        color = self.select_line_color if self.selected else self.line_color
+        pen = QPen(color)
+        # Try using integer sizes for smoother drawing(?)
+        # pen.setWidth(max(1, int(round(2.0 / self.scale))))
+        painter.setPen(pen)
 
-            line_path = QPainterPath()
-            vrtx_path = QPainterPath()
+        line_path = QPainterPath()
+        vrtx_path = QPainterPath()
 
-            line_path.moveTo(self.points[0])
-            # Uncommenting the following line will draw 2 paths
-            # for the 1st vertex, and make it non-filled, which
-            # may be desirable.
-            # self.drawVertex(vrtx_path, 0)
+        line_path.moveTo(self.points[0])
+        # Uncommenting the following line will draw 2 paths
+        # for the 1st vertex, and make it non-filled, which
+        # may be desirable.
+        # self.drawVertex(vrtx_path, 0)
 
-            for i, p in enumerate(self.points):
-                line_path.lineTo(p)
-                self.drawVertex(vrtx_path, i)
-            if self.isClosed():
-                line_path.lineTo(self.points[0])
+        for i, p in enumerate(self.points):
+            line_path.lineTo(p)
+            self.drawVertex(vrtx_path, i)
+        if self.isClosed():
+            line_path.lineTo(self.points[0])
 
-            painter.drawPath(line_path)
-            painter.drawPath(vrtx_path)
-            painter.fillPath(vrtx_path, self.vertex_fill_color)
+        painter.drawPath(line_path)
+        painter.drawPath(vrtx_path)
+        painter.fillPath(vrtx_path, self.vertex_fill_color)
 
-            # Draw text at the top-left
-            if self.paintLabel:
-                min_x = sys.maxsize
-                min_y = sys.maxsize
-                for point in self.points:
-                    min_x = min(min_x, point.x())
-                    min_y = min(min_y, point.y())
-                if min_x != sys.maxsize and min_y != sys.maxsize:
-                    font = QFont()
-                    font.setPointSize(self.fontsize)
-                    font.setBold(True)
-                    painter.setFont(font)
-                    if self.label is None:
-                        self.label = ""
-                    if min_y < MIN_Y_LABEL:
-                        min_y += MIN_Y_LABEL
-                    painter.drawText(min_x, min_y, self.label)
+        # Draw text at the top-left
+        if self.paintLabel:
+            min_x = sys.maxsize
+            min_y = sys.maxsize
+            for point in self.points:
+                min_x = min(min_x, point.x())
+                min_y = min(min_y, point.y())
+            if min_x != sys.maxsize and min_y != sys.maxsize:
+                font = QFont()
+                font.setPointSize(self.fontsize)
+                font.setBold(True)
+                painter.setFont(font)
+                if self.label is None:
+                    self.label = ""
+                if min_y < MIN_Y_LABEL:
+                    min_y += MIN_Y_LABEL
+                painter.drawText(min_x, min_y, self.label)
 
             # Draw number at the top-right
-            if self.paintIdx:
-                min_x = sys.maxsize
-                min_y = sys.maxsize
-                for point in self.points:
-                    min_x = min(min_x, point.x())
-                    min_y = min(min_y, point.y())
-                if min_x != sys.maxsize and min_y != sys.maxsize:
-                    font = QFont()
-                    font.setPointSize(self.fontsize)
-                    font.setBold(True)
-                    painter.setFont(font)
-                    text = ''
-                    if self.idx != None:
-                        text = str(self.idx)
-                    if min_y < MIN_Y_LABEL:
-                        min_y += MIN_Y_LABEL
-                    painter.drawText(min_x, min_y, text)
+        if self.paintIdx:
+            min_x = sys.maxsize
+            min_y = sys.maxsize
+            for point in self.points:
+                min_x = min(min_x, point.x())
+                min_y = min(min_y, point.y())
+            if min_x != sys.maxsize and min_y != sys.maxsize:
+                font = QFont()
+                font.setPointSize(self.fontsize)
+                font.setBold(True)
+                painter.setFont(font)
+                text = str(self.idx) if self.idx != None else ''
+                if min_y < MIN_Y_LABEL:
+                    min_y += MIN_Y_LABEL
+                painter.drawText(min_x, min_y, text)
 
-            if self.fill:
-                color = self.select_fill_color if self.selected else self.fill_color
-                painter.fillPath(line_path, color)
+        if self.fill:
+            color = self.select_fill_color if self.selected else self.fill_color
+            painter.fillPath(line_path, color)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
@@ -208,10 +202,14 @@ class Shape(object):
             assert False, "unsupported vertex shape"
 
     def nearestVertex(self, point, epsilon):
-        for i, p in enumerate(self.points):
-            if distance(p - point) <= epsilon:
-                return i
-        return None
+        return next(
+            (
+                i
+                for i, p in enumerate(self.points)
+                if distance(p - point) <= epsilon
+            ),
+            None,
+        )
 
     def containsPoint(self, point):
         return self.makePath().contains(point)
@@ -239,8 +237,8 @@ class Shape(object):
         self._highlightIndex = None
 
     def copy(self):
-        shape = Shape("%s" % self.label)
-        shape.points = [p for p in self.points]
+        shape = Shape(f"{self.label}")
+        shape.points = list(self.points)
         shape.center = self.center
         shape.direction = self.direction
         shape.fill = self.fill

@@ -108,7 +108,7 @@ class KeyDialog(QtWidgets.QDialog):
             completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
             completer.setFilterMode(QtCore.Qt.MatchContains)
         else:
-            raise ValueError("Unsupported completion: {}".format(completion))
+            raise ValueError(f"Unsupported completion: {completion}")
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
 
@@ -124,10 +124,7 @@ class KeyDialog(QtWidgets.QDialog):
 
     def validate(self):
         text = self.edit.text()
-        if hasattr(text, "strip"):
-            text = text.strip()
-        else:
-            text = text.trimmed()
+        text = text.strip() if hasattr(text, "strip") else text.trimmed()
         if text:
             self.accept()
 
@@ -136,10 +133,7 @@ class KeyDialog(QtWidgets.QDialog):
 
     def postProcess(self):
         text = self.edit.text()
-        if hasattr(text, "strip"):
-            text = text.strip()
-        else:
-            text = text.trimmed()
+        text = text.strip() if hasattr(text, "strip") else text.trimmed()
         self.edit.setText(text)
 
     def updateFlags(self, label_new):
@@ -201,8 +195,7 @@ class KeyDialog(QtWidgets.QDialog):
         self.edit.setText(text)
         self.edit.setSelection(0, len(text))
 
-        items = self.labelList.findItems(text, QtCore.Qt.MatchFixedString)
-        if items:
+        if items := self.labelList.findItems(text, QtCore.Qt.MatchFixedString):
             if len(items) != 1:
                 self.labelList.setCurrentItem(items[0])
             row = self.labelList.row(items[0])
@@ -210,7 +203,4 @@ class KeyDialog(QtWidgets.QDialog):
         self.edit.setFocus(QtCore.Qt.PopupFocusReason)
         if move:
             self.move(QtGui.QCursor.pos())
-        if self.exec_():
-            return self.edit.text(), self.getFlags()
-        else:
-            return None, None
+        return (self.edit.text(), self.getFlags()) if self.exec_() else (None, None)

@@ -16,7 +16,7 @@ __all__ = ["build_backbone"]
 
 
 def build_backbone(config, model_type):
-    if model_type == "det" or model_type == "table":
+    if model_type in ["det", "table"]:
         from .det_mobilenet_v3 import MobileNetV3
         from .det_resnet import ResNet
         from .det_resnet_vd import ResNet_vd
@@ -28,7 +28,7 @@ def build_backbone(config, model_type):
         if model_type == "table":
             from .table_master_resnet import TableResNetExtra
             support_dict.append('TableResNetExtra')
-    elif model_type == "rec" or model_type == "cls":
+    elif model_type in ["rec", "cls"]:
         from .rec_mobilenet_v3 import MobileNetV3
         from .rec_resnet_vd import ResNet
         from .rec_resnet_fpn import ResNetFPN
@@ -69,7 +69,6 @@ def build_backbone(config, model_type):
 
     module_name = config.pop('name')
     assert module_name in support_dict, Exception(
-        "when model typs is {}, backbone only support {}".format(model_type,
-                                                                 support_dict))
-    module_class = eval(module_name)(**config)
-    return module_class
+        f"when model typs is {model_type}, backbone only support {support_dict}"
+    )
+    return eval(module_name)(**config)

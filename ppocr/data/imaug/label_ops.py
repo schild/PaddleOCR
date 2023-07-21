@@ -60,7 +60,7 @@ class DetLabelEncode(object):
                 txt_tags.append(True)
             else:
                 txt_tags.append(False)
-        if len(boxes) == 0:
+        if not boxes:
             return None
         boxes = self.expand_points_num(boxes)
         boxes = np.array(boxes, dtype=np.float32)
@@ -87,11 +87,7 @@ class DetLabelEncode(object):
         for box in boxes:
             if len(box) > max_points_num:
                 max_points_num = len(box)
-        ex_boxes = []
-        for box in boxes:
-            ex_box = box + [box[-1]] * (max_points_num - len(box))
-            ex_boxes.append(ex_box)
-        return ex_boxes
+        return [box + [box[-1]] * (max_points_num - len(box)) for box in boxes]
 
 
 class BaseRecLabelEncode(object):
@@ -114,7 +110,6 @@ class BaseRecLabelEncode(object):
                 "The character_dict_path is None, model can only recognize number and lower letters"
             )
             self.character_str = "0123456789abcdefghijklmnopqrstuvwxyz"
-            dict_character = list(self.character_str)
             self.lower = True
         else:
             self.character_str = []
@@ -125,7 +120,7 @@ class BaseRecLabelEncode(object):
                     self.character_str.append(line)
             if use_space_char:
                 self.character_str.append(" ")
-            dict_character = list(self.character_str)
+        dict_character = list(self.character_str)
         dict_character = self.add_special_char(dict_character)
         self.dict = {}
         for i, char in enumerate(dict_character):
@@ -149,16 +144,8 @@ class BaseRecLabelEncode(object):
             return None
         if self.lower:
             text = text.lower()
-        text_list = []
-        for char in text:
-            if char not in self.dict:
-                # logger = get_logger()
-                # logger.warning('{} is not in dict'.format(char))
-                continue
-            text_list.append(self.dict[char])
-        if len(text_list) == 0:
-            return None
-        return text_list
+        text_list = [self.dict[char] for char in text if char in self.dict]
+        return None if not text_list else text_list
 
 
 class CTCLabelEncode(BaseRecLabelEncode):
@@ -271,13 +258,11 @@ class KieLabelEncode(object):
                  **kwargs):
         super(KieLabelEncode, self).__init__()
         self.dict = dict({'': 0})
-        self.label2classid_map = dict()
+        self.label2classid_map = {}
         with open(character_dict_path, 'r', encoding='utf-8') as fr:
-            idx = 1
-            for line in fr:
+            for idx, line in enumerate(fr, start=1):
                 char = line.strip()
                 self.dict[char] = idx
-                idx += 1
         with open(class_path, "r") as fin:
             lines = fin.readlines()
             for idx, line in enumerate(lines):
@@ -302,7 +287,7 @@ class KieLabelEncode(object):
     def pad_text_indices(self, text_inds):
         """Pad text index to same length."""
         max_len = 300
-        recoder_len = max([len(text_ind) for text_ind in text_inds])
+        recoder_len = max(len(text_ind) for text_ind in text_inds)
         padded_text_inds = -np.ones((len(text_inds), max_len), np.int32)
         for idx, text_ind in enumerate(text_inds):
             padded_text_inds[idx, :len(text_ind)] = np.array(text_ind)
@@ -415,11 +400,10 @@ class KieLabelEncode(object):
             sorted_x_list, sorted_y_list = self.sort_vertex(x_list, y_list)
             sorted_box = []
             for x, y in zip(sorted_x_list, sorted_y_list):
-                sorted_box.append(x)
-                sorted_box.append(y)
+                sorted_box.extend((x, y))
             boxes.append(sorted_box)
             text = ann['transcription']
-            texts.append(ann['transcription'])
+            texts.append(text)
             text_ind = [self.dict[c] for c in text if c in self.dict]
             text_inds.append(text_ind)
             if 'label' in ann.keys():
@@ -483,8 +467,7 @@ class AttnLabelEncode(BaseRecLabelEncode):
         elif beg_or_end == "end":
             idx = np.array(self.dict[self.end_str])
         else:
-            assert False, "Unsupport type %s in get_beg_end_flag_idx" \
-                          % beg_or_end
+            assert False, f"Unsupport type {beg_or_end} in get_beg_end_flag_idx"
         return idx
 
 
@@ -539,8 +522,7 @@ class RFLLabelEncode(BaseRecLabelEncode):
         elif beg_or_end == "end":
             idx = np.array(self.dict[self.end_str])
         else:
-            assert False, "Unsupport type %s in get_beg_end_flag_idx" \
-                          % beg_or_end
+            assert False, f"Unsupport type {beg_or_end} in get_beg_end_flag_idx"
         return idx
 
 
@@ -617,8 +599,7 @@ class SRNLabelEncode(BaseRecLabelEncode):
         elif beg_or_end == "end":
             idx = np.array(self.dict[self.end_str])
         else:
-            assert False, "Unsupport type %s in get_beg_end_flag_idx" \
-                          % beg_or_end
+            assert False, f"Unsupport type {beg_or_end} in get_beg_end_flag_idx"
         return idx
 
 
@@ -696,7 +677,7 @@ class TableLabelEncode(AttnLabelEncode):
         for token in structure:
             if token != '':
                 if 'span' in token and token[0] != ' ':
-                    token = ' ' + token
+                    token = f' {token}'
                 new_structure.append(token)
         # encode structure
         structure = self.encode(new_structure)
@@ -764,10 +745,8 @@ class TableLabelEncode(AttnLabelEncode):
                 if 'bbox' not in cells[bbox_idx].keys():
                     content = str(cells[bbox_idx]['tokens'])
                     token = self.empty_bbox_token_dict[content]
-                add_empty_bbox_token_list.append(token)
                 bbox_idx += 1
-            else:
-                add_empty_bbox_token_list.append(token)
+            add_empty_bbox_token_list.append(token)
         return add_empty_bbox_token_list
 
 
@@ -798,10 +777,12 @@ class TableMasterLabelEncode(TableLabelEncode):
         self.unknown_str = '<UKN>'
         self.pad_str = '<PAD>'
         dict_character = dict_character
-        dict_character = dict_character + [
-            self.unknown_str, self.beg_str, self.end_str, self.pad_str
+        return dict_character + [
+            self.unknown_str,
+            self.beg_str,
+            self.end_str,
+            self.pad_str,
         ]
-        return dict_character
 
 
 class TableBoxEncode(object):
@@ -983,7 +964,7 @@ class VQATokenLabelEncode(object):
         curr_word_idx = 0
         x1, y1, x2, y2 = bbox
         unit_w = (x2 - x1) / len(text)
-        for idx, word in enumerate(words):
+        for word in words:
             curr_w = len(word) * unit_w
             word_bbox = [x1, y1, x1 + curr_w, y2]
             token_bboxes.extend([word_bbox] * len(tokenizer.tokenize(word)))
@@ -996,18 +977,18 @@ class VQATokenLabelEncode(object):
         """
         new_ocr_info = []
         empty_index = []
-        for idx, info in enumerate(ocr_info):
+        for info in ocr_info:
             if len(info["transcription"]) > 0:
                 new_ocr_info.append(copy.deepcopy(info))
             else:
                 empty_index.append(info["id"])
 
         for idx, info in enumerate(new_ocr_info):
-            new_link = []
-            for link in info["linking"]:
-                if link[0] in empty_index or link[1] in empty_index:
-                    continue
-                new_link.append(link)
+            new_link = [
+                link
+                for link in info["linking"]
+                if link[0] not in empty_index and link[1] not in empty_index
+            ]
             new_ocr_info[idx]["linking"] = new_link
         return new_ocr_info
 
@@ -1146,19 +1127,17 @@ class VQATokenLabelEncode(object):
     def _load_ocr_info(self, data):
         if self.infer_mode:
             ocr_result = self.ocr_engine.ocr(data['image'], cls=False)[0]
-            ocr_info = []
-            for res in ocr_result:
-                ocr_info.append({
+            return [
+                {
                     "transcription": res[1][0],
                     "bbox": self.trans_poly_to_bbox(res[0]),
                     "points": res[0],
-                })
-            return ocr_info
+                }
+                for res in ocr_result
+            ]
         else:
             info = data['label']
-            # read text info
-            info_dict = json.loads(info)
-            return info_dict
+            return json.loads(info)
 
     def _smooth_box(self, bboxes, height, width):
         bboxes = np.array(bboxes)
@@ -1174,9 +1153,13 @@ class VQATokenLabelEncode(object):
         if label.lower() in ["other", "others", "ignore"]:
             gt_label.extend([0] * len(encode_res["input_ids"]))
         else:
-            gt_label.append(self.label2id_map[("b-" + label).upper()])
-            gt_label.extend([self.label2id_map[("i-" + label).upper()]] *
-                            (len(encode_res["input_ids"]) - 1))
+            gt_label.append(self.label2id_map[f"b-{label}".upper()])
+            gt_label.extend(
+                (
+                    [self.label2id_map[f"i-{label}".upper()]]
+                    * (len(encode_res["input_ids"]) - 1)
+                )
+            )
         return gt_label
 
 
@@ -1197,8 +1180,7 @@ class MultiLabelEncode(BaseRecLabelEncode):
     def __call__(self, data):
         data_ctc = copy.deepcopy(data)
         data_sar = copy.deepcopy(data)
-        data_out = dict()
-        data_out['img_path'] = data.get('img_path', None)
+        data_out = {'img_path': data.get('img_path', None)}
         data_out['image'] = data['image']
         ctc = self.ctc_encode.__call__(data_ctc)
         sar = self.sar_encode.__call__(data_sar)
@@ -1316,23 +1298,23 @@ class SRLabelEncode(BaseRecLabelEncode):
                                             character_dict_path, use_space_char)
         self.dic = {}
         with open(character_dict_path, 'r') as fin:
-            for line in fin.readlines():
+            for line in fin:
                 line = line.strip()
                 character, sequence = line.split()
                 self.dic[character] = sequence
         english_stroke_alphabet = '0123456789'
-        self.english_stroke_dict = {}
-        for index in range(len(english_stroke_alphabet)):
-            self.english_stroke_dict[english_stroke_alphabet[index]] = index
+        self.english_stroke_dict = {
+            english_stroke_alphabet[index]: index
+            for index in range(len(english_stroke_alphabet))
+        }
 
     def encode(self, label):
-        stroke_sequence = ''
-        for character in label:
-            if character not in self.dic:
-                continue
-            else:
-                stroke_sequence += self.dic[character]
-        stroke_sequence += '0'
+        stroke_sequence = (
+            ''.join(
+                self.dic[character] for character in label if character in self.dic
+            )
+            + '0'
+        )
         label = stroke_sequence
 
         length = len(label)
@@ -1349,9 +1331,7 @@ class SRLabelEncode(BaseRecLabelEncode):
 
         data["length"] = length
         data["input_tensor"] = input_tensor
-        if text is None:
-            return None
-        return data
+        return None if text is None else data
 
 
 class SPINLabelEncode(AttnLabelEncode):
@@ -1399,9 +1379,7 @@ class VLLabelEncode(BaseRecLabelEncode):
                  **kwargs):
         super(VLLabelEncode, self).__init__(max_text_length,
                                             character_dict_path, use_space_char)
-        self.dict = {}
-        for i, char in enumerate(self.character):
-            self.dict[char] = i
+        self.dict = {char: i for i, char in enumerate(self.character)}
 
     def __call__(self, data):
         text = data['label']  # original string
@@ -1429,22 +1407,16 @@ class VLLabelEncode(BaseRecLabelEncode):
             return None
         text = [i + 1 for i in text]
         data['length'] = np.array(len(text))
-        text = text + [0] * (self.max_text_len - len(text))
+        text += [0] * (self.max_text_len - len(text))
         data['label'] = np.array(text)
         label_res = self.encode(label_res)
         label_sub = self.encode(label_sub)
-        if label_res is None:
-            label_res = []
-        else:
-            label_res = [i + 1 for i in label_res]
-        if label_sub is None:
-            label_sub = []
-        else:
-            label_sub = [i + 1 for i in label_sub]
+        label_res = [] if label_res is None else [i + 1 for i in label_res]
+        label_sub = [] if label_sub is None else [i + 1 for i in label_sub]
         data['length_res'] = np.array(len(label_res))
         data['length_sub'] = np.array(len(label_sub))
-        label_res = label_res + [0] * (self.max_text_len - len(label_res))
-        label_sub = label_sub + [0] * (self.max_text_len - len(label_sub))
+        label_res += [0] * (self.max_text_len - len(label_res))
+        label_sub += [0] * (self.max_text_len - len(label_sub))
         data['label_res'] = np.array(label_res)
         data['label_sub'] = np.array(label_sub)
         return data
@@ -1468,7 +1440,7 @@ class CTLabelEncode(object):
             txt = label[bno]['transcription']
             txts.append(txt)
 
-        if len(boxes) == 0:
+        if not boxes:
             return None
 
         data['polys'] = boxes
@@ -1487,14 +1459,10 @@ class CANLabelEncode(BaseRecLabelEncode):
             max_text_length, character_dict_path, use_space_char, lower)
 
     def encode(self, text_seq):
-        text_seq_encoded = []
-        for text in text_seq:
-            if text not in self.character:
-                continue
-            text_seq_encoded.append(self.dict.get(text))
-        if len(text_seq_encoded) == 0:
-            return None
-        return text_seq_encoded
+        text_seq_encoded = [
+            self.dict.get(text) for text in text_seq if text in self.character
+        ]
+        return None if not text_seq_encoded else text_seq_encoded
 
     def __call__(self, data):
         label = data['label']

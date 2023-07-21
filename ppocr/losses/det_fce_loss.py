@@ -55,7 +55,7 @@ class FCELoss(nn.Layer):
 
         p3_maps, p4_maps, p5_maps = labels[1:]
         assert p3_maps[0].shape[0] == 4 * self.fourier_degree + 5,\
-            'fourier degree not equal in FCEhead and FCEtarget'
+                'fourier degree not equal in FCEhead and FCEtarget'
 
         # to tensor
         gts = [p3_maps, p4_maps, p5_maps]
@@ -81,13 +81,13 @@ class FCELoss(nn.Layer):
             else:
                 loss_reg_y += sum(loss)
 
-        results = dict(
+        return dict(
             loss=loss_all,
             loss_text=loss_tr,
             loss_center=loss_tcl,
             loss_reg_x=loss_reg_x,
-            loss_reg_y=loss_reg_y, )
-        return results
+            loss_reg_y=loss_reg_y,
+        )
 
     def forward_single(self, pred, gt):
         cls_pred = paddle.transpose(pred[0], (0, 2, 3, 1))
@@ -140,7 +140,8 @@ class FCELoss(nn.Layer):
             dim = ft_x.shape[1]
 
             tr_train_mask3 = paddle.concat(
-                [tr_train_mask.unsqueeze(1) for i in range(dim)], axis=1)
+                [tr_train_mask.unsqueeze(1) for _ in range(dim)], axis=1
+            )
 
             loss_reg_x = paddle.mean(weight * F.smooth_l1_loss(
                 ft_x_pre.masked_select(tr_train_mask3).reshape([-1, dim]),

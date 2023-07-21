@@ -32,13 +32,15 @@ class CosineEmbeddingLoss(nn.Layer):
                 x1, axis=-1) * paddle.norm(
                     x2, axis=-1) + self.epsilon)
         one_list = paddle.full_like(target, fill_value=1)
-        out = paddle.mean(
+        return paddle.mean(
             paddle.where(
-                paddle.equal(target, one_list), 1. - similarity,
+                paddle.equal(target, one_list),
+                1.0 - similarity,
                 paddle.maximum(
-                    paddle.zeros_like(similarity), similarity - self.margin)))
-
-        return out
+                    paddle.zeros_like(similarity), similarity - self.margin
+                ),
+            )
+        )
 
 
 class AsterLoss(nn.Layer):

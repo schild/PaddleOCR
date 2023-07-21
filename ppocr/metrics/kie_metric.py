@@ -56,8 +56,7 @@ class KIEMetric(object):
         node = np.concatenate(self.node, 0)
         gts = np.concatenate(self.gt, 0)
         results = self.compute_f1_score(node, gts)
-        data = {'hmean': results.mean()}
-        return data
+        return {'hmean': results.mean()}
 
     def get_metric(self):
 

@@ -46,7 +46,7 @@ def term_mp(sig_num, frame):
     """
     pid = os.getpid()
     pgid = os.getpgid(os.getpid())
-    print("main proc {} exit, kill process group " "{}".format(pid, pgid))
+    print(f"main proc {pid} exit, kill process group {pgid}")
     os.killpg(pgid, signal.SIGKILL)
 
 
@@ -59,7 +59,8 @@ def build_dataloader(config, mode, device, logger, seed=None):
     ]
     module_name = config[mode]['dataset']['name']
     assert module_name in support_dict, Exception(
-        'DataSet only support {}'.format(support_dict))
+        f'DataSet only support {support_dict}'
+    )
     assert mode in ['Train', 'Eval', 'Test'
                     ], "Mode should be Train, Eval or Test."
 

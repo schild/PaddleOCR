@@ -38,7 +38,7 @@ class FileCorpus(object):
             random.shuffle(self.corpus_list)
         corpus = self.corpus_list[self.index]
         if corpus_length != 0:
-            corpus = corpus[0:corpus_length]
+            corpus = corpus[:corpus_length]
         if corpus_length > len(corpus):
             self.logger.warning("generated corpus is shorter than expected.")
         self.index += 1
@@ -55,12 +55,12 @@ class EnNumCorpus(object):
         self.max_width = config["Global"]["image_width"]
 
     def generate(self, corpus_length=0):
-        corpus = ""
         if corpus_length == 0:
             corpus_length = random.randint(5, 15)
-        for i in range(corpus_length):
-            if random.random() < 0.2:
-                corpus += "{}".format(random.choice(self.en_char_list))
-            else:
-                corpus += "{}".format(random.choice(self.num_list))
+        corpus = "".join(
+            f"{random.choice(self.en_char_list)}"
+            if random.random() < 0.2
+            else f"{random.choice(self.num_list)}"
+            for _ in range(corpus_length)
+        )
         return "en", corpus

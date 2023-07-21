@@ -64,12 +64,12 @@ def ohem_single(score, gt_text, training_mask):
 
 
 def ohem_batch(scores, gt_texts, training_masks):
-    selected_masks = []
-    for i in range(scores.shape[0]):
-        selected_masks.append(
-            ohem_single(scores[i, :, :], gt_texts[i, :, :], training_masks[
-                i, :, :]))
-
+    selected_masks = [
+        ohem_single(
+            scores[i, :, :], gt_texts[i, :, :], training_masks[i, :, :]
+        )
+        for i in range(scores.shape[0])
+    ]
     selected_masks = paddle.cast(paddle.concat(selected_masks, 0), "float32")
     return selected_masks
 
@@ -87,8 +87,7 @@ def iou_single(a, b, mask, n_class):
         union = paddle.cast(((a == i) | (b == i)), "float32")
 
         miou.append(paddle.sum(inter) / (paddle.sum(union) + EPS))
-    miou = sum(miou) / len(miou)
-    return miou
+    return sum(miou) / len(miou)
 
 
 def iou(a, b, mask, n_class=2, reduce=True):
@@ -193,9 +192,7 @@ class SmoothL1Loss(nn.Layer):
                 gt_kernel_instance[off_points[:, 1], off_points[:, 0]])
             selected_mask = paddle.cast(
                 selected_mask.reshape((1, -1, distance.shape[-1])), "int64")
-            selected_training_mask = selected_mask * training_mask
-
-            return selected_training_mask
+            return selected_mask * training_mask
 
     def forward(self,
                 distances,
@@ -205,12 +202,15 @@ class SmoothL1Loss(nn.Layer):
                 gt_distances,
                 reduce=True):
 
-        selected_training_masks = []
-        for i in range(distances.shape[0]):
-            selected_training_masks.append(
-                self.select_single(distances[i, :, :, :], gt_instances[i, :, :],
-                                   gt_kernel_instances[i, :, :], training_masks[
-                                       i, :, :]))
+        selected_training_masks = [
+            self.select_single(
+                distances[i, :, :, :],
+                gt_instances[i, :, :],
+                gt_kernel_instances[i, :, :],
+                training_masks[i, :, :],
+            )
+            for i in range(distances.shape[0])
+        ]
         selected_training_masks = paddle.cast(
             paddle.concat(selected_training_masks, 0), "float32")
 
@@ -268,7 +268,7 @@ class CTLoss(nn.Layer):
             training_mask_distances,
             gt_distances,
             reduce=False)
-        losses.update(dict(loss_loc=loss_loc, ))
+        losses |= dict(loss_loc=loss_loc, )
 
         loss_all = loss_kernel + loss_loc
         losses = {'loss': loss_all}

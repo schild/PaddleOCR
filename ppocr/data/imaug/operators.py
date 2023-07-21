@@ -58,7 +58,7 @@ class DecodeImage(object):
         if self.img_mode == 'GRAY':
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         elif self.img_mode == 'RGB':
-            assert img.shape[2] == 3, 'invalid shape of image[%s]' % (img.shape)
+            assert img.shape[2] == 3, f'invalid shape of image[{img.shape}]'
             img = img[:, :, ::-1]
 
         if self.channel_first:
@@ -128,17 +128,13 @@ class KeepKeys(object):
         self.keep_keys = keep_keys
 
     def __call__(self, data):
-        data_list = []
-        for key in self.keep_keys:
-            data_list.append(data[key])
-        return data_list
+        return [data[key] for key in self.keep_keys]
 
 
 class Pad(object):
     def __init__(self, size=None, size_div=32, **kwargs):
         if size is not None and not isinstance(size, (int, list, tuple)):
-            raise TypeError("Type of target_size is invalid. Now is {}".format(
-                type(size)))
+            raise TypeError(f"Type of target_size is invalid. Now is {type(size)}")
         if isinstance(size, int):
             size = [size, size]
         self.size = size
@@ -193,9 +189,7 @@ class Resize(object):
         if 'polys' in data:
             new_boxes = []
             for box in text_polys:
-                new_box = []
-                for cord in box:
-                    new_box.append([cord[0] * ratio_w, cord[1] * ratio_h])
+                new_box = [[cord[0] * ratio_w, cord[1] * ratio_h] for cord in box]
                 new_boxes.append(new_box)
             data['polys'] = np.array(new_boxes, dtype=np.float32)
         data['image'] = img_resize
@@ -273,18 +267,12 @@ class DetResizeForTest(object):
         # limit the max side
         if self.limit_type == 'max':
             if max(h, w) > limit_side_len:
-                if h > w:
-                    ratio = float(limit_side_len) / h
-                else:
-                    ratio = float(limit_side_len) / w
+                ratio = float(limit_side_len) / h if h > w else float(limit_side_len) / w
             else:
                 ratio = 1.
         elif self.limit_type == 'min':
             if min(h, w) < limit_side_len:
-                if h < w:
-                    ratio = float(limit_side_len) / h
-                else:
-                    ratio = float(limit_side_len) / w
+                ratio = float(limit_side_len) / h if h < w else float(limit_side_len) / w
             else:
                 ratio = 1.
         elif self.limit_type == 'resize_long':
@@ -325,7 +313,7 @@ class DetResizeForTest(object):
         max_stride = 128
         resize_h = (resize_h + max_stride - 1) // max_stride * max_stride
         resize_w = (resize_w + max_stride - 1) // max_stride * max_stride
-        img = cv2.resize(img, (int(resize_w), int(resize_h)))
+        img = cv2.resize(img, (resize_w, resize_h))
         ratio_h = resize_h / float(h)
         ratio_w = resize_w / float(w)
 
@@ -365,7 +353,7 @@ class E2EResizeForTest(object):
         max_stride = 128
         resize_h = (resize_h + max_stride - 1) // max_stride * max_stride
         resize_w = (resize_w + max_stride - 1) // max_stride * max_stride
-        im = cv2.resize(im, (int(resize_w), int(resize_h)))
+        im = cv2.resize(im, (resize_w, resize_h))
         ratio_h = resize_h / float(h)
         ratio_w = resize_w / float(w)
         return im, (ratio_h, ratio_w)
@@ -394,7 +382,7 @@ class E2EResizeForTest(object):
         max_stride = 128
         resize_h = (resize_h + max_stride - 1) // max_stride * max_stride
         resize_w = (resize_w + max_stride - 1) // max_stride * max_stride
-        im = cv2.resize(im, (int(resize_w), int(resize_h)))
+        im = cv2.resize(im, (resize_w, resize_h))
         ratio_h = resize_h / float(h)
         ratio_w = resize_w / float(w)
 
@@ -515,10 +503,6 @@ class GrayImageChannelFormat(object):
         img_single_channel = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img_expanded = np.expand_dims(img_single_channel, 0)
 
-        if self.inverse:
-            data['image'] = np.abs(img_expanded - 1)
-        else:
-            data['image'] = img_expanded
-
+        data['image'] = np.abs(img_expanded - 1) if self.inverse else img_expanded
         data['src_image'] = img
         return data

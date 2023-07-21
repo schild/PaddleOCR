@@ -65,10 +65,10 @@ class SASTLoss(nn.Layer):
         border_sign = paddle.cast(border_sign, dtype='float32')
         border_sign.stop_gradient = True
         border_in_loss = 0.5 * abs_border_diff * abs_border_diff * border_sign + \
-                    (abs_border_diff - 0.5) * (1.0 - border_sign)
+                        (abs_border_diff - 0.5) * (1.0 - border_sign)
         border_out_loss = l_border_norm_split * border_in_loss
         border_loss = paddle.sum(border_out_loss * l_border_score * l_border_mask) / \
-                    (paddle.sum(l_border_score * l_border_mask) + 1e-5)
+                        (paddle.sum(l_border_score * l_border_mask) + 1e-5)
 
         #tvo_loss
         l_tvo_split, l_tvo_norm = paddle.split(
@@ -85,10 +85,10 @@ class SASTLoss(nn.Layer):
         tvo_sign = paddle.cast(tvo_sign, dtype='float32')
         tvo_sign.stop_gradient = True
         tvo_in_loss = 0.5 * abs_tvo_geo_diff * abs_tvo_geo_diff * tvo_sign + \
-                    (abs_tvo_geo_diff - 0.5) * (1.0 - tvo_sign)
+                        (abs_tvo_geo_diff - 0.5) * (1.0 - tvo_sign)
         tvo_out_loss = l_tvo_norm_split * tvo_in_loss
         tvo_loss = paddle.sum(tvo_out_loss * l_tvo_score * l_tvo_mask) / \
-                    (paddle.sum(l_tvo_score * l_tvo_mask) + 1e-5)
+                        (paddle.sum(l_tvo_score * l_tvo_mask) + 1e-5)
 
         #tco_loss
         l_tco_split, l_tco_norm = paddle.split(
@@ -105,17 +105,21 @@ class SASTLoss(nn.Layer):
         tco_sign = paddle.cast(tco_sign, dtype='float32')
         tco_sign.stop_gradient = True
         tco_in_loss = 0.5 * abs_tco_geo_diff * abs_tco_geo_diff * tco_sign + \
-                    (abs_tco_geo_diff - 0.5) * (1.0 - tco_sign)
+                        (abs_tco_geo_diff - 0.5) * (1.0 - tco_sign)
         tco_out_loss = l_tco_norm_split * tco_in_loss
         tco_loss = paddle.sum(tco_out_loss * l_tco_score * l_tco_mask) / \
-                    (paddle.sum(l_tco_score * l_tco_mask) + 1e-5)
+                        (paddle.sum(l_tco_score * l_tco_mask) + 1e-5)
 
         # total loss
         tvo_lw, tco_lw = 1.5, 1.5
         score_lw, border_lw = 1.0, 1.0
         total_loss = score_loss * score_lw + border_loss * border_lw + \
-                    tvo_loss * tvo_lw + tco_loss * tco_lw
+                        tvo_loss * tvo_lw + tco_loss * tco_lw
 
-        losses = {'loss':total_loss, "score_loss":score_loss,\
-            "border_loss":border_loss, 'tvo_loss':tvo_loss, 'tco_loss':tco_loss}
-        return losses
+        return {
+            'loss': total_loss,
+            "score_loss": score_loss,
+            "border_loss": border_loss,
+            'tvo_loss': tvo_loss,
+            'tco_loss': tco_loss,
+        }

@@ -35,38 +35,38 @@ class Worker(QThread):
         try:
             findex = 0
             for Imgpath in self.mImgList:
-                if self.handle == 0:
-                    self.listValue.emit(Imgpath)
-                    if self.model == 'paddle':
-                        h, w, _ = cv2.imdecode(np.fromfile(Imgpath, dtype=np.uint8), 1).shape
-                        if h > 32 and w > 32:
-                            self.result_dic = self.ocr.ocr(Imgpath, cls=True, det=True)[0]
-                        else:
-                            print('The size of', Imgpath, 'is too small to be recognised')
-                            self.result_dic = None
+                if self.handle != 0:
+                    break
+                self.listValue.emit(Imgpath)
+                if self.model == 'paddle':
+                    h, w, _ = cv2.imdecode(np.fromfile(Imgpath, dtype=np.uint8), 1).shape
+                    if h > 32 and w > 32:
+                        self.result_dic = self.ocr.ocr(Imgpath, cls=True, det=True)[0]
+                    else:
+                        print('The size of', Imgpath, 'is too small to be recognised')
+                        self.result_dic = None
 
                     # 结果保存
-                    if self.result_dic is None or len(self.result_dic) == 0:
-                        print('Can not recognise file', Imgpath)
-                        pass
-                    else:
-                        strs = ''
-                        for res in self.result_dic:
-                            chars = res[1][0]
-                            cond = res[1][1]
-                            posi = res[0]
-                            strs += "Transcription: " + chars + " Probability: " + str(cond) + \
-                                    " Location: " + json.dumps(posi) +'\n'
-                        # Sending large amounts of data repeatedly through pyqtSignal may affect the program efficiency
-                        self.listValue.emit(strs)
-                        self.mainThread.result_dic = self.result_dic
-                        self.mainThread.filePath = Imgpath
-                        # 保存
-                        self.mainThread.saveFile(mode='Auto')
-                    findex += 1
-                    self.progressBarValue.emit(findex)
+                if self.result_dic is None or len(self.result_dic) == 0:
+                    print('Can not recognise file', Imgpath)
                 else:
-                    break
+                    strs = ''
+                    for res in self.result_dic:
+                        chars = res[1][0]
+                        cond = res[1][1]
+                        posi = res[0]
+                        strs += (
+                            f"Transcription: {chars} Probability: {str(cond)} Location: {json.dumps(posi)}"
+                            + '\n'
+                        )
+                    # Sending large amounts of data repeatedly through pyqtSignal may affect the program efficiency
+                    self.listValue.emit(strs)
+                    self.mainThread.result_dic = self.result_dic
+                    self.mainThread.filePath = Imgpath
+                    # 保存
+                    self.mainThread.saveFile(mode='Auto')
+                findex += 1
+                self.progressBarValue.emit(findex)
             self.endsignal.emit(0, "readAll")
             self.exec()
         except Exception as e:
@@ -119,7 +119,7 @@ class AutoDialog(QDialog):
         # calculate time left of auto labeling
         avg_time = (time.time() - self.time_start) / i  # Use average time to prevent time fluctuations
         time_left = str(datetime.timedelta(seconds=avg_time * (self.lender - i))).split(".")[0]  # Remove microseconds
-        self.setWindowTitle("PPOCRLabel  --  " + f"Time Left: {time_left}")  # show
+        self.setWindowTitle(f"PPOCRLabel  --  Time Left: {time_left}")
 
     def handleListWidgetSingal(self, i):
         self.listWidget.addItem(i)

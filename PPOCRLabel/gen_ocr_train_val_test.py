@@ -13,8 +13,7 @@ def isCreateOrDeleteFolder(path, flag):
         shutil.rmtree(flagPath)
 
     os.makedirs(flagPath)
-    flagAbsPath = os.path.abspath(flagPath)
-    return flagAbsPath
+    return os.path.abspath(flagPath)
 
 
 def splitTrainVal(root, absTrainRootPath, absValRootPath, absTestRootPath, trainTxt, valTxt, testTxt, flag):
@@ -39,7 +38,7 @@ def splitTrainVal(root, absTrainRootPath, absValRootPath, absTestRootPath, train
         if flag == "det":
             imagePath = os.path.join(dataAbsPath, imageName)
         elif flag == "rec":
-            imagePath = os.path.join(dataAbsPath, "{}\\{}".format(args.recImageDirName, imageName))
+            imagePath = os.path.join(dataAbsPath, f"{args.recImageDirName}\\{imageName}")
 
         # 按预设的比例划分训练集、验证集、测试集
         trainValTestRatio = args.trainValTestRatio.split(":")
@@ -50,15 +49,15 @@ def splitTrainVal(root, absTrainRootPath, absValRootPath, absTestRootPath, train
         if curRatio < trainRatio:
             imageCopyPath = os.path.join(absTrainRootPath, imageName)
             shutil.copy(imagePath, imageCopyPath)
-            trainTxt.write("{}\t{}".format(imageCopyPath, imageLabel))
-        elif curRatio >= trainRatio and curRatio < valRatio:
+            trainTxt.write(f"{imageCopyPath}\t{imageLabel}")
+        elif curRatio < valRatio:
             imageCopyPath = os.path.join(absValRootPath, imageName)
             shutil.copy(imagePath, imageCopyPath)
-            valTxt.write("{}\t{}".format(imageCopyPath, imageLabel))
+            valTxt.write(f"{imageCopyPath}\t{imageLabel}")
         else:
             imageCopyPath = os.path.join(absTestRootPath, imageName)
             shutil.copy(imagePath, imageCopyPath)
-            testTxt.write("{}\t{}".format(imageCopyPath, imageLabel))
+            testTxt.write(f"{imageCopyPath}\t{imageLabel}")
 
 
 # 删掉存在的文件

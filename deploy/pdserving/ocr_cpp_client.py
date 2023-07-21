@@ -43,7 +43,7 @@ def cv2_to_base64(image):
 
 def _check_image_file(path):
     img_end = {'jpg', 'bmp', 'png', 'jpeg', 'rgb', 'tif', 'tiff', 'gif'}
-    return any([path.lower().endswith(e) for e in img_end])
+    return any(path.lower().endswith(e) for e in img_end)
 
 
 test_img_list = []
@@ -54,8 +54,8 @@ elif os.path.isdir(test_img_dir):
         file_path = os.path.join(test_img_dir, single_file)
         if os.path.isfile(file_path) and _check_image_file(file_path):
             test_img_list.append(file_path)
-if len(test_img_list) == 0:
-    raise Exception("not found any img file in {}".format(test_img_dir))
+if not test_img_list:
+    raise Exception(f"not found any img file in {test_img_dir}")
 
 for img_file in test_img_list:
     with open(img_file, 'rb') as file:

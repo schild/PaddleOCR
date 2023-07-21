@@ -64,7 +64,7 @@ class TableStructureMetric(object):
         self.all_num = 0
         self.len_acc_num = 0
         self.token_nums = 0
-        self.anys_dict = dict()
+        self.anys_dict = {}
 
 
 class TableMetric(object):
@@ -129,12 +129,11 @@ class TableMetric(object):
         if self.main_indicator == self.bbox_metric.main_indicator:
             output = bbox_metric
             for sub_key in structure_metric:
-                output["structure_metric_{}".format(
-                    sub_key)] = structure_metric[sub_key]
+                output[f"structure_metric_{sub_key}"] = structure_metric[sub_key]
         else:
             output = structure_metric
             for sub_key in bbox_metric:
-                output["bbox_metric_{}".format(sub_key)] = bbox_metric[sub_key]
+                output[f"bbox_metric_{sub_key}"] = bbox_metric[sub_key]
         return output
 
     def reset(self):

@@ -46,8 +46,9 @@ class CombinedLoss(nn.Layer):
                               dict) and len(config) == 1, "yaml format error"
             name = list(config)[0]
             param = config[name]
-            assert "weight" in param, "weight must be in param, but param just contains {}".format(
-                param.keys())
+            assert (
+                "weight" in param
+            ), f"weight must be in param, but param just contains {param.keys()}"
             self.loss_weight.append(param.pop("weight"))
             self.loss_func.append(eval(name)(**param))
 
@@ -57,7 +58,7 @@ class CombinedLoss(nn.Layer):
         for idx, loss_func in enumerate(self.loss_func):
             loss = loss_func(input, batch, **kargs)
             if isinstance(loss, paddle.Tensor):
-                loss = {"loss_{}_{}".format(str(loss), idx): loss}
+                loss = {f"loss_{str(loss)}_{idx}": loss}
 
             weight = self.loss_weight[idx]
 
@@ -67,6 +68,6 @@ class CombinedLoss(nn.Layer):
                 loss_all += loss["loss"]
             else:
                 loss_all += paddle.add_n(list(loss.values()))
-            loss_dict.update(loss)
+            loss_dict |= loss
         loss_dict["loss"] = loss_all
         return loss_dict

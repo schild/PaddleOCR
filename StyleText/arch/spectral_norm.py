@@ -27,9 +27,9 @@ class SpectralNorm(object):
         self.name = name
         self.dim = dim
         if n_power_iterations <= 0:
-            raise ValueError('Expected n_power_iterations to be positive, but '
-                             'got n_power_iterations={}'.format(
-                                 n_power_iterations))
+            raise ValueError(
+                f'Expected n_power_iterations to be positive, but got n_power_iterations={n_power_iterations}'
+            )
         self.n_power_iterations = n_power_iterations
         self.eps = eps
 
@@ -47,9 +47,9 @@ class SpectralNorm(object):
         return weight_mat.reshape([height, -1])
 
     def compute_weight(self, module, do_power_iteration):
-        weight = getattr(module, self.name + '_orig')
-        u = getattr(module, self.name + '_u')
-        v = getattr(module, self.name + '_v')
+        weight = getattr(module, f'{self.name}_orig')
+        u = getattr(module, f'{self.name}_u')
+        v = getattr(module, f'{self.name}_v')
         weight_mat = self.reshape_weight_to_matrix(weight)
 
         if do_power_iteration:
@@ -82,9 +82,9 @@ class SpectralNorm(object):
         with paddle.no_grad():
             weight = self.compute_weight(module, do_power_iteration=False)
         delattr(module, self.name)
-        delattr(module, self.name + '_u')
-        delattr(module, self.name + '_v')
-        delattr(module, self.name + '_orig')
+        delattr(module, f'{self.name}_u')
+        delattr(module, f'{self.name}_v')
+        delattr(module, f'{self.name}_orig')
 
         module.add_parameter(self.name, weight.detach())
 
@@ -100,8 +100,8 @@ class SpectralNorm(object):
         for k, hook in module._forward_pre_hooks.items():
             if isinstance(hook, SpectralNorm) and hook.name == name:
                 raise RuntimeError(
-                    "Cannot register two spectral_norm hooks on "
-                    "the same parameter {}".format(name))
+                    f"Cannot register two spectral_norm hooks on the same parameter {name}"
+                )
 
         fn = SpectralNorm(name, n_power_iterations, dim, eps)
         weight = module._parameters[name]
@@ -120,15 +120,15 @@ class SpectralNorm(object):
 
         # delete fn.name form parameters, otherwise you can not set attribute
         del module._parameters[fn.name]
-        module.add_parameter(fn.name + "_orig", weight)
+        module.add_parameter(f"{fn.name}_orig", weight)
         # still need to assign weight back as fn.name because all sorts of
         # things may assume that it exists, e.g., when initializing weights.
         # However, we can't directly assign as it could be an Parameter and
         # gets added as a parameter. Instead, we register weight * 1.0 as a plain
         # attribute.
         setattr(module, fn.name, weight * 1.0)
-        module.register_buffer(fn.name + "_u", u)
-        module.register_buffer(fn.name + "_v", v)
+        module.register_buffer(f"{fn.name}_u", u)
+        module.register_buffer(f"{fn.name}_v", v)
 
         module.register_forward_pre_hook(fn)
         return fn

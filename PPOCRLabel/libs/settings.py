@@ -31,9 +31,7 @@ class Settings(object):
         return self.data[key]
 
     def get(self, key, default=None):
-        if key in self.data:
-            return self.data[key]
-        return default
+        return self.data[key] if key in self.data else default
 
     def save(self):
         if self.path:

@@ -124,13 +124,12 @@ class CANMetric(object):
         self.epoch_reset()
 
     def __call__(self, preds, batch, **kwargs):
-        for k, v in kwargs.items():
+        for v in kwargs.values():
             epoch_reset = v
             if epoch_reset:
                 self.epoch_reset()
         word_probs = preds
         word_label, word_label_mask = batch
-        line_right = 0
         if word_probs is not None:
             word_pred = word_probs.argmax(2)
         word_pred = word_pred.cpu().detach().numpy()
@@ -145,9 +144,7 @@ class CANMetric(object):
             for s1, s2, s3 in zip(word_label, word_pred, word_label_mask)
         ]
         batch_size = len(word_scores)
-        for i in range(batch_size):
-            if word_scores[i] == 1:
-                line_right += 1
+        line_right = sum(1 for i in range(batch_size) if word_scores[i] == 1)
         self.word_rate = np.mean(word_scores)  #float
         self.exp_rate = line_right / batch_size  #float
         exp_length, word_length = word_label.shape[:2]

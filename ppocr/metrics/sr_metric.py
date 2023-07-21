@@ -41,8 +41,7 @@ class SSIM(nn.Layer):
     def create_window(self, window_size, channel):
         _1D_window = self.gaussian(window_size, 1.5).unsqueeze(1)
         _2D_window = _1D_window.mm(_1D_window.t()).unsqueeze(0).unsqueeze(0)
-        window = _2D_window.expand([channel, 1, window_size, window_size])
-        return window
+        return _2D_window.expand([channel, 1, window_size, window_size])
 
     def _ssim(self, img1, img2, window, window_size, channel,
               size_average=True):
@@ -69,10 +68,7 @@ class SSIM(nn.Layer):
         ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / (
             (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
 
-        if size_average:
-            return ssim_map.mean()
-        else:
-            return ssim_map.mean([1, 2, 3])
+        return ssim_map.mean() if size_average else ssim_map.mean([1, 2, 3])
 
     def ssim(self, img1, img2, window_size=11, size_average=True):
         (_, channel, _, _) = img1.shape

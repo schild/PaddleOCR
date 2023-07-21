@@ -22,19 +22,20 @@ class Decoder(nn.Layer):
                  act, act_attr, conv_block_dropout, conv_block_num,
                  conv_block_dilation, out_conv_act, out_conv_act_attr):
         super(Decoder, self).__init__()
-        conv_blocks = []
-        for i in range(conv_block_num):
-            conv_blocks.append(
-                ResBlock(
-                    name="{}_conv_block_{}".format(name, i),
-                    channels=encode_dim * 8,
-                    norm_layer=norm_layer,
-                    use_dropout=conv_block_dropout,
-                    use_dilation=conv_block_dilation,
-                    use_bias=use_bias))
+        conv_blocks = [
+            ResBlock(
+                name=f"{name}_conv_block_{i}",
+                channels=encode_dim * 8,
+                norm_layer=norm_layer,
+                use_dropout=conv_block_dropout,
+                use_dilation=conv_block_dilation,
+                use_bias=use_bias,
+            )
+            for i in range(conv_block_num)
+        ]
         self.conv_blocks = nn.Sequential(*conv_blocks)
         self._up1 = SNConvTranspose(
-            name=name + "_up1",
+            name=f"{name}_up1",
             in_channels=encode_dim * 8,
             out_channels=encode_dim * 4,
             kernel_size=3,
@@ -44,9 +45,10 @@ class Decoder(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._up2 = SNConvTranspose(
-            name=name + "_up2",
+            name=f"{name}_up2",
             in_channels=encode_dim * 4,
             out_channels=encode_dim * 2,
             kernel_size=3,
@@ -56,9 +58,10 @@ class Decoder(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._up3 = SNConvTranspose(
-            name=name + "_up3",
+            name=f"{name}_up3",
             in_channels=encode_dim * 2,
             out_channels=encode_dim,
             kernel_size=3,
@@ -68,23 +71,24 @@ class Decoder(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._pad2d = paddle.nn.Pad2D([1, 1, 1, 1], mode="replicate")
         self._out_conv = SNConv(
-            name=name + "_out_conv",
+            name=f"{name}_out_conv",
             in_channels=encode_dim,
             out_channels=out_channels,
             kernel_size=3,
             use_bias=use_bias,
             norm_layer=None,
             act=out_conv_act,
-            act_attr=out_conv_act_attr)
+            act_attr=out_conv_act_attr,
+        )
 
     def forward(self, x):
         if isinstance(x, (list, tuple)):
             x = paddle.concat(x, axis=1)
-        output_dict = dict()
-        output_dict["conv_blocks"] = self.conv_blocks.forward(x)
+        output_dict = {"conv_blocks": self.conv_blocks.forward(x)}
         output_dict["up1"] = self._up1.forward(output_dict["conv_blocks"])
         output_dict["up2"] = self._up2.forward(output_dict["up1"])
         output_dict["up3"] = self._up3.forward(output_dict["up2"])
@@ -98,19 +102,20 @@ class DecoderUnet(nn.Layer):
                  act, act_attr, conv_block_dropout, conv_block_num,
                  conv_block_dilation, out_conv_act, out_conv_act_attr):
         super(DecoderUnet, self).__init__()
-        conv_blocks = []
-        for i in range(conv_block_num):
-            conv_blocks.append(
-                ResBlock(
-                    name="{}_conv_block_{}".format(name, i),
-                    channels=encode_dim * 8,
-                    norm_layer=norm_layer,
-                    use_dropout=conv_block_dropout,
-                    use_dilation=conv_block_dilation,
-                    use_bias=use_bias))
+        conv_blocks = [
+            ResBlock(
+                name=f"{name}_conv_block_{i}",
+                channels=encode_dim * 8,
+                norm_layer=norm_layer,
+                use_dropout=conv_block_dropout,
+                use_dilation=conv_block_dilation,
+                use_bias=use_bias,
+            )
+            for i in range(conv_block_num)
+        ]
         self._conv_blocks = nn.Sequential(*conv_blocks)
         self._up1 = SNConvTranspose(
-            name=name + "_up1",
+            name=f"{name}_up1",
             in_channels=encode_dim * 8,
             out_channels=encode_dim * 4,
             kernel_size=3,
@@ -120,9 +125,10 @@ class DecoderUnet(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._up2 = SNConvTranspose(
-            name=name + "_up2",
+            name=f"{name}_up2",
             in_channels=encode_dim * 8,
             out_channels=encode_dim * 2,
             kernel_size=3,
@@ -132,9 +138,10 @@ class DecoderUnet(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._up3 = SNConvTranspose(
-            name=name + "_up3",
+            name=f"{name}_up3",
             in_channels=encode_dim * 4,
             out_channels=encode_dim,
             kernel_size=3,
@@ -144,23 +151,24 @@ class DecoderUnet(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._pad2d = paddle.nn.Pad2D([1, 1, 1, 1], mode="replicate")
         self._out_conv = SNConv(
-            name=name + "_out_conv",
+            name=f"{name}_out_conv",
             in_channels=encode_dim,
             out_channels=out_channels,
             kernel_size=3,
             use_bias=use_bias,
             norm_layer=None,
             act=out_conv_act,
-            act_attr=out_conv_act_attr)
+            act_attr=out_conv_act_attr,
+        )
 
     def forward(self, x, y, feature2, feature1):
-        output_dict = dict()
-        output_dict["conv_blocks"] = self._conv_blocks(
-            paddle.concat(
-                (x, y), axis=1))
+        output_dict = {
+            "conv_blocks": self._conv_blocks(paddle.concat((x, y), axis=1))
+        }
         output_dict["up1"] = self._up1.forward(output_dict["conv_blocks"])
         output_dict["up2"] = self._up2.forward(
             paddle.concat(
@@ -178,19 +186,20 @@ class SingleDecoder(nn.Layer):
                  act, act_attr, conv_block_dropout, conv_block_num,
                  conv_block_dilation, out_conv_act, out_conv_act_attr):
         super(SingleDecoder, self).__init__()
-        conv_blocks = []
-        for i in range(conv_block_num):
-            conv_blocks.append(
-                ResBlock(
-                    name="{}_conv_block_{}".format(name, i),
-                    channels=encode_dim * 4,
-                    norm_layer=norm_layer,
-                    use_dropout=conv_block_dropout,
-                    use_dilation=conv_block_dilation,
-                    use_bias=use_bias))
+        conv_blocks = [
+            ResBlock(
+                name=f"{name}_conv_block_{i}",
+                channels=encode_dim * 4,
+                norm_layer=norm_layer,
+                use_dropout=conv_block_dropout,
+                use_dilation=conv_block_dilation,
+                use_bias=use_bias,
+            )
+            for i in range(conv_block_num)
+        ]
         self._conv_blocks = nn.Sequential(*conv_blocks)
         self._up1 = SNConvTranspose(
-            name=name + "_up1",
+            name=f"{name}_up1",
             in_channels=encode_dim * 4,
             out_channels=encode_dim * 4,
             kernel_size=3,
@@ -200,9 +209,10 @@ class SingleDecoder(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._up2 = SNConvTranspose(
-            name=name + "_up2",
+            name=f"{name}_up2",
             in_channels=encode_dim * 8,
             out_channels=encode_dim * 2,
             kernel_size=3,
@@ -212,9 +222,10 @@ class SingleDecoder(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._up3 = SNConvTranspose(
-            name=name + "_up3",
+            name=f"{name}_up3",
             in_channels=encode_dim * 4,
             out_channels=encode_dim,
             kernel_size=3,
@@ -224,21 +235,22 @@ class SingleDecoder(nn.Layer):
             use_bias=use_bias,
             norm_layer=norm_layer,
             act=act,
-            act_attr=act_attr)
+            act_attr=act_attr,
+        )
         self._pad2d = paddle.nn.Pad2D([1, 1, 1, 1], mode="replicate")
         self._out_conv = SNConv(
-            name=name + "_out_conv",
+            name=f"{name}_out_conv",
             in_channels=encode_dim,
             out_channels=out_channels,
             kernel_size=3,
             use_bias=use_bias,
             norm_layer=None,
             act=out_conv_act,
-            act_attr=out_conv_act_attr)
+            act_attr=out_conv_act_attr,
+        )
 
     def forward(self, x, feature2, feature1):
-        output_dict = dict()
-        output_dict["conv_blocks"] = self._conv_blocks.forward(x)
+        output_dict = {"conv_blocks": self._conv_blocks.forward(x)}
         output_dict["up1"] = self._up1.forward(output_dict["conv_blocks"])
         output_dict["up2"] = self._up2.forward(
             paddle.concat(
