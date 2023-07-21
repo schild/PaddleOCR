@@ -346,11 +346,10 @@ def parse_args(mMain=True):
             action.default = None
     if mMain:
         return parser.parse_args()
-    else:
-        inference_args_dict = {}
-        for action in parser._actions:
-            inference_args_dict[action.dest] = action.default
-        return argparse.Namespace(**inference_args_dict)
+    inference_args_dict = {
+        action.dest: action.default for action in parser._actions
+    }
+    return argparse.Namespace(**inference_args_dict)
 
 
 def parse_lang(lang):
@@ -377,9 +376,9 @@ def parse_lang(lang):
         lang = "cyrillic"
     elif lang in devanagari_lang:
         lang = "devanagari"
-    assert lang in MODEL_URLS['OCR'][DEFAULT_OCR_MODEL_VERSION][
-        'rec'], 'param lang must in {}, but got {}'.format(
-            MODEL_URLS['OCR'][DEFAULT_OCR_MODEL_VERSION]['rec'].keys(), lang)
+    assert (
+        lang in MODEL_URLS['OCR'][DEFAULT_OCR_MODEL_VERSION]['rec']
+    ), f"param lang must in {MODEL_URLS['OCR'][DEFAULT_OCR_MODEL_VERSION]['rec'].keys()}, but got {lang}"
     if lang == "ch":
         det_lang = "ch"
     elif lang == 'structure':
@@ -406,8 +405,9 @@ def get_model_config(type, version, model_type, lang):
         if model_type in model_urls[DEFAULT_MODEL_VERSION]:
             version = DEFAULT_MODEL_VERSION
         else:
-            logger.error('{} models is not support, we only support {}'.format(
-                model_type, model_urls[DEFAULT_MODEL_VERSION].keys()))
+            logger.error(
+                f'{model_type} models is not support, we only support {model_urls[DEFAULT_MODEL_VERSION].keys()}'
+            )
             sys.exit(-1)
 
     if lang not in model_urls[version][model_type]:
@@ -441,7 +441,7 @@ def check_img(img):
             with open(image_file, 'rb') as f:
                 img = img_decode(f.read())
         if img is None:
-            logger.error("error in loading image:{}".format(image_file))
+            logger.error(f"error in loading image:{image_file}")
             return None
     if isinstance(img, np.ndarray) and len(img.shape) == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
@@ -458,8 +458,9 @@ class PaddleOCR(predict_system.TextSystem):
         """
         params = parse_args(mMain=False)
         params.__dict__.update(**kwargs)
-        assert params.ocr_version in SUPPORT_OCR_MODEL_VERSION, "ocr_version must in {}, but get {}".format(
-            SUPPORT_OCR_MODEL_VERSION, params.ocr_version)
+        assert (
+            params.ocr_version in SUPPORT_OCR_MODEL_VERSION
+        ), f"ocr_version must in {SUPPORT_OCR_MODEL_VERSION}, but get {params.ocr_version}"
         params.use_gpu = check_gpu(params.use_gpu)
 
         if not params.show_log:
@@ -495,10 +496,10 @@ class PaddleOCR(predict_system.TextSystem):
             maybe_download(params.cls_model_dir, cls_url)
 
         if params.det_algorithm not in SUPPORT_DET_MODEL:
-            logger.error('det_algorithm must in {}'.format(SUPPORT_DET_MODEL))
+            logger.error(f'det_algorithm must in {SUPPORT_DET_MODEL}')
             sys.exit(0)
         if params.rec_algorithm not in SUPPORT_REC_MODEL:
-            logger.error('rec_algorithm must in {}'.format(SUPPORT_REC_MODEL))
+            logger.error(f'rec_algorithm must in {SUPPORT_REC_MODEL}')
             sys.exit(0)
 
         if params.rec_char_dict_path is None:
@@ -585,27 +586,23 @@ class PaddleOCR(predict_system.TextSystem):
                         cls_res.append(cls_res_tmp)
                 rec_res, elapse = self.text_recognizer(img)
                 ocr_res.append(rec_res)
-            if not rec:
-                return cls_res
-            return ocr_res
+            return cls_res if not rec else ocr_res
 
 
 class PPStructure(StructureSystem):
     def __init__(self, **kwargs):
         params = parse_args(mMain=False)
         params.__dict__.update(**kwargs)
-        assert params.structure_version in SUPPORT_STRUCTURE_MODEL_VERSION, "structure_version must in {}, but get {}".format(
-            SUPPORT_STRUCTURE_MODEL_VERSION, params.structure_version)
+        assert (
+            params.structure_version in SUPPORT_STRUCTURE_MODEL_VERSION
+        ), f"structure_version must in {SUPPORT_STRUCTURE_MODEL_VERSION}, but get {params.structure_version}"
         params.use_gpu = check_gpu(params.use_gpu)
         params.mode = 'structure'
 
         if not params.show_log:
             logger.setLevel(logging.INFO)
         lang, det_lang = parse_lang(params.lang)
-        if lang == 'ch':
-            table_lang = 'ch'
-        else:
-            table_lang = 'en'
+        table_lang = 'ch' if lang == 'ch' else 'en'
         if params.structure_version == 'PP-Structure':
             params.merge_no_span_structure = False
 
@@ -666,7 +663,7 @@ def main():
     else:
         image_file_list = get_image_file_list(args.image_dir)
     if len(image_file_list) == 0:
-        logger.error('no images find in {}'.format(args.image_dir))
+        logger.error(f'no images find in {args.image_dir}')
         return
     if args.type == 'ocr':
         engine = PaddleOCR(**(args.__dict__))
@@ -677,7 +674,7 @@ def main():
 
     for img_path in image_file_list:
         img_name = os.path.basename(img_path).split('.')[0]
-        logger.info('{}{}{}'.format('*' * 10, img_path, '*' * 10))
+        logger.info(f"{'*' * 10}{img_path}{'*' * 10}")
         if args.type == 'ocr':
             result = engine.ocr(
                 img_path,
@@ -700,17 +697,16 @@ def main():
 
             if args.recovery and args.use_pdf2docx_api and flag_pdf:
                 from pdf2docx.converter import Converter
-                docx_file = os.path.join(args.output,
-                                         '{}.docx'.format(img_name))
+                docx_file = os.path.join(args.output, f'{img_name}.docx')
                 cv = Converter(img_path)
                 cv.convert(docx_file)
                 cv.close()
-                logger.info('docx save to {}'.format(docx_file))
+                logger.info(f'docx save to {docx_file}')
                 continue
 
             if not flag_pdf:
                 if img is None:
-                    logger.error("error in loading image:{}".format(img_path))
+                    logger.error(f"error in loading image:{img_path}")
                     continue
                 img_paths = [[img_path, img]]
             else:
@@ -719,15 +715,14 @@ def main():
                     os.makedirs(
                         os.path.join(args.output, img_name), exist_ok=True)
                     pdf_img_path = os.path.join(
-                        args.output, img_name,
-                        img_name + '_' + str(index) + '.jpg')
+                        args.output, img_name, f'{img_name}_{str(index)}.jpg'
+                    )
                     cv2.imwrite(pdf_img_path, pdf_img)
                     img_paths.append([pdf_img_path, pdf_img])
 
             all_res = []
             for index, (new_img_path, img) in enumerate(img_paths):
-                logger.info('processing {}/{} page:'.format(index + 1,
-                                                            len(img_paths)))
+                logger.info(f'processing {index + 1}/{len(img_paths)} page:')
                 new_img_name = os.path.basename(new_img_path).split('.')[0]
                 result = engine(new_img_path, img_idx=index)
                 save_structure_res(result, args.output, img_name, index)
@@ -745,13 +740,11 @@ def main():
                     from ppstructure.recovery.recovery_to_doc import convert_info_docx
                     convert_info_docx(img, all_res, args.output, img_name)
                 except Exception as ex:
-                    logger.error(
-                        "error in layout recovery image:{}, err msg: {}".format(
-                            img_name, ex))
+                    logger.error(f"error in layout recovery image:{img_name}, err msg: {ex}")
                     continue
 
             for item in all_res:
                 item.pop('img')
                 item.pop('res')
                 logger.info(item)
-            logger.info('result save to {}'.format(args.output))
+            logger.info(f'result save to {args.output}')

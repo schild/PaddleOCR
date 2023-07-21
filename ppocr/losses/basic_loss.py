@@ -43,15 +43,14 @@ class CELoss(nn.Layer):
             class_num = x.shape[-1]
             label = self._labelsmoothing(label, class_num)
             x = -F.log_softmax(x, axis=-1)
-            loss = paddle.sum(x * label, axis=-1)
+            return paddle.sum(x * label, axis=-1)
         else:
             if label.shape[-1] == x.shape[-1]:
                 label = F.softmax(label, axis=-1)
                 soft_label = True
             else:
                 soft_label = False
-            loss = F.cross_entropy(x, label=label, soft_label=soft_label)
-        return loss
+            return F.cross_entropy(x, label=label, soft_label=soft_label)
 
 
 class KLJSLoss(object):
@@ -118,16 +117,13 @@ class DMLLoss(nn.Layer):
         if self.act is not None:
             out1 = self.act(out1) + 1e-10
             out2 = self.act(out2) + 1e-10
-        if self.use_log:
-            # for recognition distillation, log is needed for feature map
-            log_out1 = paddle.log(out1)
-            log_out2 = paddle.log(out2)
-            loss = (
-                self._kldiv(log_out1, out2) + self._kldiv(log_out2, out1)) / 2.0
-        else:
+        if not self.use_log:
             # for detection distillation log is not needed
-            loss = self.jskl_loss(out1, out2)
-        return loss
+            return self.jskl_loss(out1, out2)
+        # for recognition distillation, log is needed for feature map
+        log_out1 = paddle.log(out1)
+        log_out2 = paddle.log(out2)
+        return (self._kldiv(log_out1, out2) + self._kldiv(log_out2, out1)) / 2.0
 
 
 class DistanceLoss(nn.Layer):
@@ -158,7 +154,7 @@ class LossFromOutput(nn.Layer):
 
     def forward(self, predicts, batch):
         loss = predicts
-        if self.key is not None and isinstance(predicts, dict):
+        if self.key is not None and isinstance(loss, dict):
             loss = loss[self.key]
         if self.reduction == 'mean':
             loss = paddle.mean(loss)

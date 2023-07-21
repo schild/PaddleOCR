@@ -33,8 +33,8 @@ class CELoss(nn.Layer):
                 else:
                     flt_logtis = logits.reshape([-1, logits.shape[2]])
                     flt_tgt = batch[1].reshape([-1])
-                loss[name + '_loss'] = self.loss_func(flt_logtis, flt_tgt)
-                loss_sum.append(loss[name + '_loss'])
+                loss[f'{name}_loss'] = self.loss_func(flt_logtis, flt_tgt)
+                loss_sum.append(loss[f'{name}_loss'])
             loss['loss'] = sum(loss_sum)
             return loss
         else:
@@ -43,7 +43,6 @@ class CELoss(nn.Layer):
                 pred = pred.reshape([-1, pred.shape[2]])
                 tgt = tgt.reshape([-1])
                 loss = self.loss_func(pred, tgt)
-                return {'loss': loss}
             else:  # for NRTR
                 max_len = batch[2].max()
                 tgt = batch[1][:, 1:2 + max_len]
@@ -63,4 +62,5 @@ class CELoss(nn.Layer):
                     loss = loss.masked_select(non_pad_mask).mean()
                 else:
                     loss = self.loss_func(pred, tgt)
-                return {'loss': loss}
+
+            return {'loss': loss}

@@ -156,7 +156,7 @@ class GenTableMask(object):
     def __call__(self, data):
         img = data['image']
         cells = data['cells']
-        height, width = img.shape[0:2]
+        height, width = img.shape[:2]
         if self.mask_type == 1:
             mask_img = np.zeros((height, width), dtype=np.float32)
         else:
@@ -197,7 +197,7 @@ class ResizeTableImage(object):
 
     def __call__(self, data):
         img = data['image']
-        height, width = img.shape[0:2]
+        height, width = img.shape[:2]
         ratio = self.max_len / (max(height, width) * 1.0)
         resize_h = int(height * ratio)
         resize_w = int(width * ratio)
@@ -220,7 +220,7 @@ class PaddingTableImage(object):
         img = data['image']
         pad_h, pad_w = self.size
         padding_img = np.zeros((pad_h, pad_w, 3), dtype=np.float32)
-        height, width = img.shape[0:2]
+        height, width = img.shape[:2]
         padding_img[0:height, 0:width, :] = img.copy()
         data['image'] = padding_img
         shape = data['shape'].tolist()

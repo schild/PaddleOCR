@@ -78,10 +78,10 @@ class OCRService(WebService):
         for i, dtbox in enumerate(dt_boxes):
             boximg = get_rotate_crop_image(im, dt_boxes[i])
             img_list.append(boximg)
-            h, w = boximg.shape[0:2]
+            h, w = boximg.shape[:2]
             wh_ratio = w * 1.0 / h
             max_wh_ratio = max(max_wh_ratio, wh_ratio)
-        if len(img_list) == 0:
+        if not img_list:
             return [], []
         _, w, h = self.ocr_reader.resize_norm_img(img_list[0],
                                                   max_wh_ratio).shape

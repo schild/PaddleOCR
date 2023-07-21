@@ -81,12 +81,9 @@ class TextGenerator(nn.Layer):
         conv_block_dropout = config["conv_block_dropout"]
         conv_block_num = config["conv_block_num"]
         conv_block_dilation = config["conv_block_dilation"]
-        if norm_layer == "InstanceNorm2D":
-            use_bias = True
-        else:
-            use_bias = False
+        use_bias = norm_layer == "InstanceNorm2D"
         self.encoder_text = Encoder(
-            name=name + "_encoder_text",
+            name=f"{name}_encoder_text",
             in_channels=3,
             encode_dim=encode_dim,
             use_bias=use_bias,
@@ -95,9 +92,10 @@ class TextGenerator(nn.Layer):
             act_attr=None,
             conv_block_dropout=conv_block_dropout,
             conv_block_num=conv_block_num,
-            conv_block_dilation=conv_block_dilation)
+            conv_block_dilation=conv_block_dilation,
+        )
         self.encoder_style = Encoder(
-            name=name + "_encoder_style",
+            name=f"{name}_encoder_style",
             in_channels=3,
             encode_dim=encode_dim,
             use_bias=use_bias,
@@ -106,9 +104,10 @@ class TextGenerator(nn.Layer):
             act_attr=None,
             conv_block_dropout=conv_block_dropout,
             conv_block_num=conv_block_num,
-            conv_block_dilation=conv_block_dilation)
+            conv_block_dilation=conv_block_dilation,
+        )
         self.decoder_text = Decoder(
-            name=name + "_decoder_text",
+            name=f"{name}_decoder_text",
             encode_dim=encode_dim,
             out_channels=int(encode_dim / 2),
             use_bias=use_bias,
@@ -119,9 +118,10 @@ class TextGenerator(nn.Layer):
             conv_block_num=conv_block_num,
             conv_block_dilation=conv_block_dilation,
             out_conv_act="Tanh",
-            out_conv_act_attr=None)
+            out_conv_act_attr=None,
+        )
         self.decoder_sk = Decoder(
-            name=name + "_decoder_sk",
+            name=f"{name}_decoder_sk",
             encode_dim=encode_dim,
             out_channels=1,
             use_bias=use_bias,
@@ -132,14 +132,16 @@ class TextGenerator(nn.Layer):
             conv_block_num=conv_block_num,
             conv_block_dilation=conv_block_dilation,
             out_conv_act="Sigmoid",
-            out_conv_act_attr=None)
+            out_conv_act_attr=None,
+        )
 
         self.middle = MiddleNet(
-            name=name + "_middle_net",
+            name=f"{name}_middle_net",
             in_channels=int(encode_dim / 2) + 1,
             mid_channels=encode_dim,
             out_channels=3,
-            use_bias=use_bias)
+            use_bias=use_bias,
+        )
 
     def forward(self, style_input, text_input):
         style_feature = self.encoder_style.forward(style_input)["res_blocks"]
@@ -163,13 +165,9 @@ class BgGeneratorWithMask(nn.Layer):
         conv_block_dilation = config["conv_block_dilation"]
         self.output_factor = config.get("output_factor", 1.0)
 
-        if norm_layer == "InstanceNorm2D":
-            use_bias = True
-        else:
-            use_bias = False
-
+        use_bias = norm_layer == "InstanceNorm2D"
         self.encoder_bg = Encoder(
-            name=name + "_encoder_bg",
+            name=f"{name}_encoder_bg",
             in_channels=3,
             encode_dim=encode_dim,
             use_bias=use_bias,
@@ -178,10 +176,11 @@ class BgGeneratorWithMask(nn.Layer):
             act_attr=None,
             conv_block_dropout=conv_block_dropout,
             conv_block_num=conv_block_num,
-            conv_block_dilation=conv_block_dilation)
+            conv_block_dilation=conv_block_dilation,
+        )
 
         self.decoder_bg = SingleDecoder(
-            name=name + "_decoder_bg",
+            name=f"{name}_decoder_bg",
             encode_dim=encode_dim,
             out_channels=3,
             use_bias=use_bias,
@@ -192,10 +191,11 @@ class BgGeneratorWithMask(nn.Layer):
             conv_block_num=conv_block_num,
             conv_block_dilation=conv_block_dilation,
             out_conv_act="Tanh",
-            out_conv_act_attr=None)
+            out_conv_act_attr=None,
+        )
 
         self.decoder_mask = Decoder(
-            name=name + "_decoder_mask",
+            name=f"{name}_decoder_mask",
             encode_dim=encode_dim // 2,
             out_channels=1,
             use_bias=use_bias,
@@ -206,14 +206,16 @@ class BgGeneratorWithMask(nn.Layer):
             conv_block_num=conv_block_num,
             conv_block_dilation=conv_block_dilation,
             out_conv_act="Sigmoid",
-            out_conv_act_attr=None)
+            out_conv_act_attr=None,
+        )
 
         self.middle = MiddleNet(
-            name=name + "_middle_net",
+            name=f"{name}_middle_net",
             in_channels=3 + 1,
             mid_channels=encode_dim,
             out_channels=3,
-            use_bias=use_bias)
+            use_bias=use_bias,
+        )
 
     def forward(self, style_input):
         encode_bg_output = self.encoder_bg(style_input)
@@ -244,11 +246,7 @@ class FusionGeneratorSimple(nn.Layer):
         norm_layer = config["norm_layer"]
         conv_block_dropout = config["conv_block_dropout"]
         conv_block_dilation = config["conv_block_dilation"]
-        if norm_layer == "InstanceNorm2D":
-            use_bias = True
-        else:
-            use_bias = False
-
+        use_bias = norm_layer == "InstanceNorm2D"
         self._conv = nn.Conv2D(
             in_channels=6,
             out_channels=encode_dim,
@@ -256,16 +254,18 @@ class FusionGeneratorSimple(nn.Layer):
             stride=1,
             padding=1,
             groups=1,
-            weight_attr=paddle.ParamAttr(name=name + "_conv_weights"),
-            bias_attr=False)
+            weight_attr=paddle.ParamAttr(name=f"{name}_conv_weights"),
+            bias_attr=False,
+        )
 
         self._res_block = ResBlock(
-            name="{}_conv_block".format(name),
+            name=f"{name}_conv_block",
             channels=encode_dim,
             norm_layer=norm_layer,
             use_dropout=conv_block_dropout,
             use_dilation=conv_block_dilation,
-            use_bias=use_bias)
+            use_bias=use_bias,
+        )
 
         self._reduce_conv = nn.Conv2D(
             in_channels=encode_dim,
@@ -274,8 +274,9 @@ class FusionGeneratorSimple(nn.Layer):
             stride=1,
             padding=1,
             groups=1,
-            weight_attr=paddle.ParamAttr(name=name + "_reduce_conv_weights"),
-            bias_attr=False)
+            weight_attr=paddle.ParamAttr(name=f"{name}_reduce_conv_weights"),
+            bias_attr=False,
+        )
 
     def forward(self, fake_text, fake_bg):
         fake_concat = paddle.concat((fake_text, fake_bg), axis=1)

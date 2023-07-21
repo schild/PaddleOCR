@@ -29,11 +29,9 @@ def get_char_lines(txt_root_path):
     txt_files = os.listdir(txt_root_path)
     char_lines = []
     for txt in txt_files:
-        f = open(os.path.join(txt_root_path, txt), mode='r', encoding='utf-8')
-        lines = f.readlines()
-        f.close()
-        for line in lines:
-            char_lines.append(line.strip())
+        with open(os.path.join(txt_root_path, txt), mode='r', encoding='utf-8') as f:
+            lines = f.readlines()
+        char_lines.extend(line.strip() for line in lines)
         return char_lines
 
 
@@ -78,7 +76,7 @@ def get_horizontal_text_picture(image_file, chars, fonts_list, cf):
     best_color = (0, 0, 0)
     draw = ImageDraw.Draw(img)
     for i, ch in enumerate(chars):
-        draw.text((x1, y1), ch, best_color, font=font)
+        draw.text((x1, crop_y1), ch, best_color, font=font)
         x1 += (ch_w[i] + char_space_width)
     crop_img = img.crop((crop_x1, crop_y1, crop_x2, crop_y2))
     return crop_img, chars
@@ -121,7 +119,7 @@ def get_vertical_text_picture(image_file, chars, fonts_list, cf):
     draw = ImageDraw.Draw(img)
     i = 0
     for ch in chars:
-        draw.text((x1, y1), ch, best_color, font=font)
+        draw.text((crop_x1, y1), ch, best_color, font=font)
         y1 = y1 + ch_h[i]
         i = i + 1
     crop_img = img.crop((crop_x1, crop_y1, crop_x2, crop_y2))
@@ -173,14 +171,16 @@ if __name__ == '__main__':
     # rec bg
     img_root_path = cf.bg_path
     imnames=os.listdir(img_root_path)
-    
+
     # det bg
     det_bg_path = cf.det_bg_path
     bg_pics = os.listdir(det_bg_path)
 
     # OCR det files
-    det_val_file = open(cf.output_dir + 'det_gt_val.txt', 'w', encoding='utf-8')
-    det_train_file = open(cf.output_dir + 'det_gt_train.txt', 'w', encoding='utf-8')
+    det_val_file = open(f'{cf.output_dir}det_gt_val.txt', 'w', encoding='utf-8')
+    det_train_file = open(
+        f'{cf.output_dir}det_gt_train.txt', 'w', encoding='utf-8'
+    )
     # det imgs
     det_save_dir = 'imgs/'
     if not os.path.exists(cf.output_dir + det_save_dir):
@@ -190,8 +190,10 @@ if __name__ == '__main__':
         os.mkdir(cf.output_dir + det_val_save_dir)
 
     # OCR rec files
-    rec_val_file = open(cf.output_dir + 'rec_gt_val.txt', 'w', encoding='utf-8')
-    rec_train_file = open(cf.output_dir + 'rec_gt_train.txt', 'w', encoding='utf-8')
+    rec_val_file = open(f'{cf.output_dir}rec_gt_val.txt', 'w', encoding='utf-8')
+    rec_train_file = open(
+        f'{cf.output_dir}rec_gt_train.txt', 'w', encoding='utf-8'
+    )
     # rec imgs
     rec_save_dir = 'rec_imgs/'
     if not os.path.exists(cf.output_dir + rec_save_dir):
@@ -223,7 +225,7 @@ if __name__ == '__main__':
         ori_w, ori_h = gen_img.size
 
         # rec imgs
-        save_img_name = str(i).zfill(4) + '.jpg'
+        save_img_name = f'{str(i).zfill(4)}.jpg'
         if i < val_ratio:
             save_dir = os.path.join(rec_val_save_dir, save_img_name)
             line = save_dir + '\t' + char_lines[i] + '\n'

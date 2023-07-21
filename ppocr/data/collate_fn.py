@@ -68,8 +68,7 @@ class SSLRotateCollate(object):
     """
 
     def __call__(self, batch):
-        output = [np.concatenate(d, axis=0) for d in zip(*batch)]
-        return output
+        return [np.concatenate(d, axis=0) for d in zip(*batch)]
 
 
 class DyMaskCollator(object):
@@ -91,12 +90,9 @@ class DyMaskCollator(object):
             if item[0].shape[1] * max_width > 1600 * 320 or item[0].shape[
                     2] * max_height > 1600 * 320:
                 continue
-            max_height = item[0].shape[1] if item[0].shape[
-                1] > max_height else max_height
-            max_width = item[0].shape[2] if item[0].shape[
-                2] > max_width else max_width
-            max_length = len(item[1]) if len(item[
-                1]) > max_length else max_length
+            max_height = max(item[0].shape[1], max_height)
+            max_width = max(item[0].shape[2], max_width)
+            max_length = max(len(item[1]), max_length)
             proper_items.append(item)
 
         images, image_masks = np.zeros(

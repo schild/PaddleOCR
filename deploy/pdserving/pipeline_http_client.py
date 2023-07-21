@@ -38,7 +38,7 @@ def cv2_to_base64(image):
 
 def _check_image_file(path):
     img_end = {'jpg', 'bmp', 'png', 'jpeg', 'rgb', 'tif', 'tiff', 'gif'}
-    return any([path.lower().endswith(e) for e in img_end])
+    return any(path.lower().endswith(e) for e in img_end)
 
 
 url = "http://127.0.0.1:9998/ocr/prediction"
@@ -52,21 +52,21 @@ elif os.path.isdir(test_img_dir):
         file_path = os.path.join(test_img_dir, single_file)
         if os.path.isfile(file_path) and _check_image_file(file_path):
             test_img_list.append(file_path)
-if len(test_img_list) == 0:
-    raise Exception("not found any img file in {}".format(test_img_dir))
+if not test_img_list:
+    raise Exception(f"not found any img file in {test_img_dir}")
 
-for idx, img_file in enumerate(test_img_list):
+for img_file in test_img_list:
     with open(img_file, 'rb') as file:
         image_data1 = file.read()
     # print file name
-    print('{}{}{}'.format('*' * 10, img_file, '*' * 10))
+    print(f"{'*' * 10}{img_file}{'*' * 10}")
 
     image = cv2_to_base64(image_data1)
 
     data = {"key": ["image"], "value": [image]}
     r = requests.post(url=url, data=json.dumps(data))
     result = r.json()
-    print("erro_no:{}, err_msg:{}".format(result["err_no"], result["err_msg"]))
+    print(f'erro_no:{result["err_no"]}, err_msg:{result["err_msg"]}')
     # check success
     if result["err_no"] == 0:
         ocr_result = result["value"][0]
@@ -76,12 +76,10 @@ for idx, img_file in enumerate(test_img_list):
             try:
                 for item in eval(ocr_result):
                     # return transcription and points
-                    print("{}, {}".format(item[0], item[1]))
+                    print(f"{item[0]}, {item[1]}")
             except Exception as e:
                 print(ocr_result)
                 print("No results")
-                continue
-
     else:
         print(
             "For details about error message, see PipelineServingLogs/pipeline.log"

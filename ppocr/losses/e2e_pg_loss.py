@@ -55,11 +55,11 @@ class PGLoss(nn.Layer):
         border_sign = paddle.cast(border_sign, dtype='float32')
         border_sign.stop_gradient = True
         border_in_loss = 0.5 * abs_border_diff * abs_border_diff * border_sign + \
-                         (abs_border_diff - 0.5) * (1.0 - border_sign)
+                             (abs_border_diff - 0.5) * (1.0 - border_sign)
         border_out_loss = l_border_norm_split * border_in_loss
-        border_loss = paddle.sum(border_out_loss * l_border_score * l_border_mask) / \
-                      (paddle.sum(l_border_score * l_border_mask) + 1e-5)
-        return border_loss
+        return paddle.sum(border_out_loss * l_border_score * l_border_mask) / (
+            paddle.sum(l_border_score * l_border_mask) + 1e-5
+        )
 
     def direction_loss(self, f_direction, l_direction, l_score, l_mask):
         l_direction_split, l_direction_norm = paddle.tensor.split(
@@ -78,11 +78,11 @@ class PGLoss(nn.Layer):
         direction_sign = paddle.cast(direction_sign, dtype='float32')
         direction_sign.stop_gradient = True
         direction_in_loss = 0.5 * abs_direction_diff * abs_direction_diff * direction_sign + \
-                            (abs_direction_diff - 0.5) * (1.0 - direction_sign)
+                                (abs_direction_diff - 0.5) * (1.0 - direction_sign)
         direction_out_loss = l_direction_norm_split * direction_in_loss
-        direction_loss = paddle.sum(direction_out_loss * l_direction_score * l_direction_mask) / \
-                         (paddle.sum(l_direction_score * l_direction_mask) + 1e-5)
-        return direction_loss
+        return paddle.sum(
+            direction_out_loss * l_direction_score * l_direction_mask
+        ) / (paddle.sum(l_direction_score * l_direction_mask) + 1e-5)
 
     def ctcloss(self, f_char, tcl_pos, tcl_mask, tcl_label, label_t):
         f_char = paddle.transpose(f_char, [0, 2, 3, 1])
@@ -115,14 +115,14 @@ class PGLoss(nn.Layer):
 
     def forward(self, predicts, labels):
         images, tcl_maps, tcl_label_maps, border_maps \
-            , direction_maps, training_masks, label_list, pos_list, pos_mask = labels
+                , direction_maps, training_masks, label_list, pos_list, pos_mask = labels
         # for all the batch_size
         pos_list, pos_mask, label_list, label_t = pre_process(
             label_list, pos_list, pos_mask, self.max_text_length,
             self.max_text_nums, self.pad_num, self.tcl_bs)
 
         f_score, f_border, f_direction, f_char = predicts['f_score'], predicts['f_border'], predicts['f_direction'], \
-                                                 predicts['f_char']
+                                                     predicts['f_char']
         score_loss = self.dice_loss(f_score, tcl_maps, training_masks)
         border_loss = self.border_loss(f_border, border_maps, tcl_maps,
                                        training_masks)
@@ -131,11 +131,10 @@ class PGLoss(nn.Layer):
         ctc_loss = self.ctcloss(f_char, pos_list, pos_mask, label_list, label_t)
         loss_all = score_loss + border_loss + direction_loss + 5 * ctc_loss
 
-        losses = {
+        return {
             'loss': loss_all,
             "score_loss": score_loss,
             "border_loss": border_loss,
             "direction_loss": direction_loss,
-            "ctc_loss": ctc_loss
+            "ctc_loss": ctc_loss,
         }
-        return losses

@@ -32,12 +32,12 @@ class SimpleWriter(object):
         if not os.path.exists(image_home):
             os.makedirs(image_home)
 
-        image_path = os.path.join(image_home, "{}.png".format(self.counter))
+        image_path = os.path.join(image_home, f"{self.counter}.png")
         # todo support continue synth
         cv2.imwrite(image_path, image)
-        self.logger.info("generate image: {}".format(image_path))
+        self.logger.info(f"generate image: {image_path}")
 
-        image_name = os.path.join(self.tag, "{}.png".format(self.counter))
+        image_name = os.path.join(self.tag, f"{self.counter}.png")
         self.label_dict[image_name] = text_input_label
 
         self.counter += 1
@@ -51,9 +51,8 @@ class SimpleWriter(object):
             os.mkdir(label_home)
         for image_path in self.label_dict:
             label = self.label_dict[image_path]
-            label_raw += "{}\t{}\n".format(image_path, label)
-        label_file_path = os.path.join(label_home,
-                                       "{}_label.txt".format(self.tag))
+            label_raw += f"{image_path}\t{label}\n"
+        label_file_path = os.path.join(label_home, f"{self.tag}_label.txt")
         with open(label_file_path, "w") as f:
             f.write(label_raw)
         self.label_file_index += 1

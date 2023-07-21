@@ -32,11 +32,10 @@ class StrokeFocusLoss(nn.Layer):
         self.ce_loss = nn.CrossEntropyLoss()
         self.l1_loss = nn.L1Loss()
         self.english_stroke_alphabet = '0123456789'
-        self.english_stroke_dict = {}
-        for index in range(len(self.english_stroke_alphabet)):
-            self.english_stroke_dict[self.english_stroke_alphabet[
-                index]] = index
-
+        self.english_stroke_dict = {
+            self.english_stroke_alphabet[index]: index
+            for index in range(len(self.english_stroke_alphabet))
+        }
         stroke_decompose_lines = open(character_dict_path, 'r').readlines()
         self.dic = {}
         for line in stroke_decompose_lines:

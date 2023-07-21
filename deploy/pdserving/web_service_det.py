@@ -68,8 +68,7 @@ class DetOp(Op):
 
 class OcrService(WebService):
     def get_pipeline_response(self, read_op):
-        det_op = DetOp(name="det", input_ops=[read_op])
-        return det_op
+        return DetOp(name="det", input_ops=[read_op])
 
 
 uci_service = OcrService(name="ocr")

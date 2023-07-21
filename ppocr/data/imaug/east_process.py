@@ -41,8 +41,8 @@ class EASTProcessTrain(object):
     def preprocess(self, im):
         input_size = self.input_size
         im_shape = im.shape
-        im_size_min = np.min(im_shape[0:2])
-        im_size_max = np.max(im_shape[0:2])
+        im_size_min = np.min(im_shape[:2])
+        im_size_max = np.max(im_shape[:2])
         im_scale = float(input_size) / float(im_size_max)
         im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale)
         img_mean = [0.485, 0.456, 0.406]
@@ -71,7 +71,7 @@ class EASTProcessTrain(object):
             rand_degree_cnt = 2
         elif rand_degree_ratio > 0.666:
             rand_degree_cnt = 3
-        for i in range(rand_degree_cnt):
+        for _ in range(rand_degree_cnt):
             dst_im = np.rot90(dst_im)
         rot_degree = -90 * rand_degree_cnt
         rot_angle = rot_degree * math.pi / 180.0
@@ -84,9 +84,9 @@ class EASTProcessTrain(object):
             for j in range(4):
                 sx, sy = wordBB[j][0], wordBB[j][1]
                 dx = math.cos(rot_angle) * (sx - cx)\
-                    - math.sin(rot_angle) * (sy - cy) + ncx
+                        - math.sin(rot_angle) * (sy - cy) + ncx
                 dy = math.sin(rot_angle) * (sx - cx)\
-                    + math.cos(rot_angle) * (sy - cy) + ncy
+                        + math.cos(rot_angle) * (sy - cy) + ncy
                 poly.append([dx, dy])
             dst_polys.append(poly)
         dst_polys = np.array(dst_polys, dtype=np.float32)
@@ -314,7 +314,7 @@ class EASTProcessTrain(object):
         if len(h_axis) == 0 or len(w_axis) == 0:
             return im, polys, tags
 
-        for i in range(max_tries):
+        for _ in range(max_tries):
             xx = np.random.choice(w_axis, size=2)
             xmin = np.min(xx) - pad_w
             xmax = np.max(xx) - pad_w
@@ -326,29 +326,27 @@ class EASTProcessTrain(object):
             ymin = np.clip(ymin, 0, h - 1)
             ymax = np.clip(ymax, 0, h - 1)
             if xmax - xmin < self.min_crop_side_ratio * w or \
-               ymax - ymin < self.min_crop_side_ratio * h:
+                   ymax - ymin < self.min_crop_side_ratio * h:
                 # area too small
                 continue
             if polys.shape[0] != 0:
                 poly_axis_in_area = (polys[:, :, 0] >= xmin)\
-                    & (polys[:, :, 0] <= xmax)\
-                    & (polys[:, :, 1] >= ymin)\
-                    & (polys[:, :, 1] <= ymax)
+                        & (polys[:, :, 0] <= xmax)\
+                        & (polys[:, :, 1] >= ymin)\
+                        & (polys[:, :, 1] <= ymax)
                 selected_polys = np.where(
                     np.sum(poly_axis_in_area, axis=1) == 4)[0]
             else:
                 selected_polys = []
 
             if len(selected_polys) == 0:
-                # no text in this area
-                if crop_background:
-                    im = im[ymin:ymax + 1, xmin:xmax + 1, :]
-                    polys = []
-                    tags = []
-                    return im, polys, tags
-                else:
+                if not crop_background:
                     continue
 
+                im = im[ymin:ymax + 1, xmin:xmax + 1, :]
+                polys = []
+                tags = []
+                return im, polys, tags
             im = im[ymin:ymax + 1, xmin:xmax + 1, :]
             polys = polys[selected_polys]
             tags = tags[selected_polys]

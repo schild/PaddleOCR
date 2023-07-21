@@ -78,7 +78,7 @@ class PSELoss(nn.Layer):
                          gt_kernels[:, -1, :, :],
                          training_masks * gt_texts,
                          reduce=False)
-        losses.update(dict(loss_kernels=loss_kernels, iou_kernel=iou_kernel))
+        losses |= dict(loss_kernels=loss_kernels, iou_kernel=iou_kernel)
         loss = self.alpha * loss_text + (1 - self.alpha) * loss_kernels
         losses['loss'] = loss
         if self.reduction == 'sum':
@@ -139,11 +139,14 @@ class PSELoss(nn.Layer):
         return selected_mask
 
     def ohem_batch(self, scores, gt_texts, training_masks, ohem_ratio=3):
-        selected_masks = []
-        for i in range(scores.shape[0]):
-            selected_masks.append(
-                self.ohem_single(scores[i, :, :], gt_texts[i, :, :],
-                                 training_masks[i, :, :], ohem_ratio))
-
+        selected_masks = [
+            self.ohem_single(
+                scores[i, :, :],
+                gt_texts[i, :, :],
+                training_masks[i, :, :],
+                ohem_ratio,
+            )
+            for i in range(scores.shape[0])
+        ]
         selected_masks = paddle.concat(selected_masks, 0).astype('float32')
         return selected_masks

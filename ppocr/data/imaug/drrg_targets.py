@@ -225,9 +225,7 @@ class DRRGTargets(object):
             p_coords = np.dot(weight, line[[edge_ind, edge_ind + 1]])
             points.append(p_coords)
         points.append(line[-1])
-        resampled_line = np.vstack(points)
-
-        return resampled_line
+        return np.vstack(points)
 
     def resample_sidelines(self, sideline1, sideline2, resample_step):
 
@@ -252,9 +250,9 @@ class DRRGTargets(object):
 
         assert isinstance(line, tuple)
         point1, point2 = line
-        d = abs(np.cross(point2 - point1, point - point1)) / (
-            norm(point2 - point1) + 1e-8)
-        return d
+        return abs(np.cross(point2 - point1, point - point1)) / (
+            norm(point2 - point1) + 1e-8
+        )
 
     def draw_center_region_maps(self, top_line, bot_line, center_line,
                                 center_region_mask, top_height_map,
@@ -335,11 +333,10 @@ class DRRGTargets(object):
                     center_line = center_line[::-1]
                     resampled_top_line = resampled_top_line[::-1]
                     resampled_bot_line = resampled_bot_line[::-1]
-            else:
-                if (center_line[-1] - center_line[0])[0] < 0:
-                    center_line = center_line[::-1]
-                    resampled_top_line = resampled_top_line[::-1]
-                    resampled_bot_line = resampled_bot_line[::-1]
+            elif (center_line[-1] - center_line[0])[0] < 0:
+                center_line = center_line[::-1]
+                resampled_top_line = resampled_top_line[::-1]
+                resampled_bot_line = resampled_bot_line[::-1]
 
             line_head_shrink_len = np.clip(
                 (norm(top_line[0] - bot_line[0]) * self.comp_w_h_ratio),
@@ -397,7 +394,7 @@ class DRRGTargets(object):
 
         inner_center_sample_mask = np.zeros_like(center_sample_mask)
         inner_center_sample_mask[margin:h - margin, margin:w - margin] = \
-            center_sample_mask[margin:h - margin, margin:w - margin]
+                center_sample_mask[margin:h - margin, margin:w - margin]
         kernel_size = int(np.clip(max_rand_half_height, 7, 21))
         inner_center_sample_mask = cv2.erode(
             inner_center_sample_mask,
@@ -427,12 +424,16 @@ class DRRGTargets(object):
         width = np.clip(height * self.comp_w_h_ratio, self.min_width,
                         self.max_width)
 
-        rand_comp_attribs = np.hstack([
-            rand_centers[:, ::-1], height, width, rand_cos, rand_sin,
-            np.zeros_like(rand_sin)
-        ]).astype(np.float32)
-
-        return rand_comp_attribs
+        return np.hstack(
+            [
+                rand_centers[:, ::-1],
+                height,
+                width,
+                rand_cos,
+                rand_sin,
+                np.zeros_like(rand_sin),
+            ]
+        ).astype(np.float32)
 
     def jitter_comp_attribs(self, comp_attribs, jitter_level):
         """Jitter text components attributes.
@@ -478,9 +479,7 @@ class DRRGTargets(object):
         cos = cos * scale
         sin = sin * scale
 
-        jittered_comp_attribs = np.hstack([x, y, h, w, cos, sin, comp_labels])
-
-        return jittered_comp_attribs
+        return np.hstack([x, y, h, w, cos, sin, comp_labels])
 
     def generate_comp_attribs(self, center_lines, text_mask, center_region_mask,
                               top_height_map, bot_height_map, sin_map, cos_map):

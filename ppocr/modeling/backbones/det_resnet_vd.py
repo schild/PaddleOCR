@@ -93,8 +93,7 @@ class DeformableConvV2(nn.Layer):
             num_or_sections=[self.offset_channel, self.mask_channel],
             axis=1)
         mask = F.sigmoid(mask)
-        y = self.conv_dcn(x, offset, mask=mask)
-        return y
+        return self.conv_dcn(x, offset, mask=mask)
 
 
 class ConvBNLayer(nn.Layer):
@@ -177,7 +176,8 @@ class BottleneckBlock(nn.Layer):
                 out_channels=out_channels * 4,
                 kernel_size=1,
                 stride=1,
-                is_vd_mode=False if if_first else True)
+                is_vd_mode=not if_first,
+            )
 
         self.shortcut = shortcut
 
@@ -186,10 +186,7 @@ class BottleneckBlock(nn.Layer):
         conv1 = self.conv1(y)
         conv2 = self.conv2(conv1)
 
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
+        short = inputs if self.shortcut else self.short(inputs)
         y = paddle.add(x=short, y=conv2)
         y = F.relu(y)
         return y
@@ -223,7 +220,8 @@ class BasicBlock(nn.Layer):
                 out_channels=out_channels,
                 kernel_size=1,
                 stride=1,
-                is_vd_mode=False if if_first else True)
+                is_vd_mode=not if_first,
+            )
 
         self.shortcut = shortcut
 
@@ -231,10 +229,7 @@ class BasicBlock(nn.Layer):
         y = self.conv0(inputs)
         conv1 = self.conv1(y)
 
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
+        short = inputs if self.shortcut else self.short(inputs)
         y = paddle.add(x=short, y=conv1)
         y = F.relu(y)
         return y
@@ -251,13 +246,13 @@ class ResNet_vd(nn.Layer):
 
         self.layers = layers
         supported_layers = [18, 34, 50, 101, 152, 200]
-        assert layers in supported_layers, \
-            "supported layers are {} but input layer is {}".format(
-                supported_layers, layers)
+        assert (
+            layers in supported_layers
+        ), f"supported layers are {supported_layers} but input layer is {layers}"
 
         if layers == 18:
             depth = [2, 2, 2, 2]
-        elif layers == 34 or layers == 50:
+        elif layers in [34, 50]:
             depth = [3, 4, 6, 3]
         elif layers == 101:
             depth = [3, 4, 23, 3]

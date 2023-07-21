@@ -68,9 +68,10 @@ class DBLoss(nn.Layer):
         loss_threshold_maps = self.beta * loss_threshold_maps
 
         loss_all = loss_shrink_maps + loss_threshold_maps \
-                   + loss_binary_maps
-        losses = {'loss': loss_all, \
-                  "loss_shrink_maps": loss_shrink_maps, \
-                  "loss_threshold_maps": loss_threshold_maps, \
-                  "loss_binary_maps": loss_binary_maps}
-        return losses
+                       + loss_binary_maps
+        return {
+            'loss': loss_all,
+            "loss_shrink_maps": loss_shrink_maps,
+            "loss_threshold_maps": loss_threshold_maps,
+            "loss_binary_maps": loss_binary_maps,
+        }

@@ -35,7 +35,7 @@ class SimpleDataSet(Dataset):
         data_source_num = len(label_file_list)
         ratio_list = dataset_config.get("ratio_list", 1.0)
         if isinstance(ratio_list, (float, int)):
-            ratio_list = [float(ratio_list)] * int(data_source_num)
+            ratio_list = [float(ratio_list)] * data_source_num
 
         assert len(
             ratio_list
@@ -43,7 +43,7 @@ class SimpleDataSet(Dataset):
         self.data_dir = dataset_config['data_dir']
         self.do_shuffle = loader_config['shuffle']
         self.seed = seed
-        logger.info("Initialize indexs of datasets:%s" % label_file_list)
+        logger.info(f"Initialize indexs of datasets:{label_file_list}")
         self.data_lines = self.get_image_info_list(label_file_list, ratio_list)
         self.data_idx_order_list = list(range(len(self.data_lines)))
         if self.mode == "train" and self.do_shuffle:
@@ -83,11 +83,14 @@ class SimpleDataSet(Dataset):
         return file_name
 
     def get_ext_data(self):
-        ext_data_num = 0
-        for op in self.ops:
-            if hasattr(op, 'ext_data_num'):
-                ext_data_num = getattr(op, 'ext_data_num')
-                break
+        ext_data_num = next(
+            (
+                getattr(op, 'ext_data_num')
+                for op in self.ops
+                if hasattr(op, 'ext_data_num')
+            ),
+            0,
+        )
         load_data_ops = self.ops[:self.ext_op_transform_idx]
         ext_data = []
 
@@ -129,7 +132,7 @@ class SimpleDataSet(Dataset):
             img_path = os.path.join(self.data_dir, file_name)
             data = {'img_path': img_path, 'label': label}
             if not os.path.exists(img_path):
-                raise Exception("{} does not exist!".format(img_path))
+                raise Exception(f"{img_path} does not exist!")
             with open(data['img_path'], 'rb') as f:
                 img = f.read()
                 data['image'] = img
@@ -137,8 +140,8 @@ class SimpleDataSet(Dataset):
             outs = transform(data, self.ops)
         except:
             self.logger.error(
-                "When parsing line {}, error happened with msg: {}".format(
-                    data_line, traceback.format_exc()))
+                f"When parsing line {data_line}, error happened with msg: {traceback.format_exc()}"
+            )
             outs = None
         if outs is None:
             # during evaluation, we should fix the idx to get same results for many times of evaluation.

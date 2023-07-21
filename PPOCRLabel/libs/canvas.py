@@ -236,8 +236,7 @@ class Canvas(QWidget):
                 if self.selectedVertex():
                     self.hShape.highlightClear()
                 self.hVertex, self.hShape = None, shape
-                self.setToolTip(
-                    "Click & drag to move shape '%s'" % shape.label)
+                self.setToolTip(f"Click & drag to move shape '{shape.label}'")
                 self.setStatusTip(self.toolTip())
                 self.overrideCursor(CURSOR_GRAB)
                 self.update()
@@ -496,13 +495,7 @@ class Canvas(QWidget):
         if self.outOfPixmap(o2):
             pos += QPointF(min(0, self.pixmap.width() - o2.x()),
                            min(0, self.pixmap.height() - o2.y()))
-        # The next line tracks the new position of the cursor
-        # relative to the shape, but also results in making it
-        # a bit "shaky" when nearing the border and allows it to
-        # go outside of the shape's area for some reason. XXX
-        #self.calculateOffsets(self.selectedShape, pos)
-        dp = pos - self.prevPoint
-        if dp:
+        if dp := pos - self.prevPoint:
             for shape in shapes:
                 shape.moveBy(dp)
                 shape.close()
@@ -532,9 +525,7 @@ class Canvas(QWidget):
         return deleted_shapes
 
     def storeShapes(self):
-        shapesBackup = []
-        for shape in self.shapes:
-            shapesBackup.append(shape.copy())
+        shapesBackup = [shape.copy() for shape in self.shapes]
         if len(self.shapesBackups) >= 10:
             self.shapesBackups = self.shapesBackups[-9:]
         self.shapesBackups.append(shapesBackup)
@@ -618,19 +609,17 @@ class Canvas(QWidget):
         if self.verified:
             pal = self.palette()
             pal.setColor(self.backgroundRole(), QColor(184, 239, 38, 128))
-            self.setPalette(pal)
         else:
             pal = self.palette()
             pal.setColor(self.backgroundRole(), QColor(232, 232, 232, 255))
-            self.setPalette(pal)
-
+        self.setPalette(pal)
         # adaptive BBOX label & index font size
         if self.pixmap:
             h, w = self.pixmap.size().height(), self.pixmap.size().width()
             fontszie = int(max(h, w) / 48)
             for s in self.shapes:
                 s.fontsize = fontszie
-        
+
         p.end()
 
     def fillDrawing(self):
@@ -751,10 +740,10 @@ class Canvas(QWidget):
     def rotateOutOfBound(self, angle):
         for shape in range(len(self.selectedShapes)):
             self.selectedShape = self.selectedShapes[shape]
-            for i, p in enumerate(self.selectedShape.points):
-                if self.outOfPixmap(self.selectedShape.rotatePoint(p, angle)):
-                    return True
-            return False
+            return any(
+                self.outOfPixmap(self.selectedShape.rotatePoint(p, angle))
+                for p in self.selectedShape.points
+            )
 
     def moveOnePixel(self, direction):
         # print(self.selectedShape.points)
@@ -902,9 +891,7 @@ class Canvas(QWidget):
     
     @property
     def isShapeRestorable(self):
-        if len(self.shapesBackups) < 2:
-            return False
-        return True
+        return len(self.shapesBackups) >= 2
 
     def updateShapeIndex(self):
         for i in range(len(self.shapes)):

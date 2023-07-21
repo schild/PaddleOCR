@@ -79,7 +79,8 @@ class ArgsParser(ArgumentParser):
             "-l",
             "--language",
             nargs='+',
-            help="set language type, support {}".format(support_list))
+            help=f"set language type, support {support_list}",
+        )
         self.add_argument(
             "--train",
             type=str,
@@ -120,10 +121,9 @@ class ArgsParser(ArgumentParser):
     def _set_language(self, type):
         lang = type[0]
         assert (type), "please use -l or --language to choose language type"
-        assert(
-                lang in support_list.keys() or lang in multi_lang
-               ),"the sub_keys(-l or --language) can only be one of support list: \n{},\nbut get: {}, " \
-                 "please check your running command".format(multi_lang, type)
+        assert (
+            lang in support_list.keys() or lang in multi_lang
+        ), f"the sub_keys(-l or --language) can only be one of support list: \n{multi_lang},\nbut get: {type}, please check your running command"
         if lang in latin_lang:
             lang = "latin"
         elif lang in arabic_lang:
@@ -133,13 +133,15 @@ class ArgsParser(ArgumentParser):
         elif lang in devanagari_lang:
             lang = "devanagari"
         global_config['Global'][
-            'character_dict_path'] = 'ppocr/utils/dict/{}_dict.txt'.format(lang)
-        global_config['Global'][
-            'save_model_dir'] = './output/rec_{}_lite'.format(lang)
-        global_config['Train']['dataset'][
-            'label_file_list'] = ["train_data/{}_train.txt".format(lang)]
-        global_config['Eval']['dataset'][
-            'label_file_list'] = ["train_data/{}_val.txt".format(lang)]
+            'character_dict_path'
+        ] = f'ppocr/utils/dict/{lang}_dict.txt'
+        global_config['Global']['save_model_dir'] = f'./output/rec_{lang}_lite'
+        global_config['Train']['dataset']['label_file_list'] = [
+            f"train_data/{lang}_train.txt"
+        ]
+        global_config['Eval']['dataset']['label_file_list'] = [
+            f"train_data/{lang}_val.txt"
+        ]
         global_config['Global']['character_type'] = lang
         assert (
             os.path.isfile(
@@ -168,8 +170,7 @@ def merge_config(config):
             sub_keys = key.split('.')
             assert (
                 sub_keys[0] in global_config
-            ), "the sub_keys can only be one of global_config: {}, but get: {}, please check your running command".format(
-                global_config.keys(), sub_keys[0])
+            ), f"the sub_keys can only be one of global_config: {global_config.keys()}, but get: {sub_keys[0]}, please check your running command"
             cur = global_config[sub_keys[0]]
             for idx, sub_key in enumerate(sub_keys[1:]):
                 if idx == len(sub_keys) - 2:
@@ -179,16 +180,15 @@ def merge_config(config):
 
 
 def loss_file(path):
-    assert (
-        os.path.exists(path)
-    ), "There is no such file:{},Please do not forget to put in the specified file".format(
-        path)
+    assert os.path.exists(
+        path
+    ), f"There is no such file:{path},Please do not forget to put in the specified file"
 
 
 if __name__ == '__main__':
     FLAGS = ArgsParser().parse_args()
     merge_config(FLAGS.opt)
-    save_file_path = 'rec_{}_lite_train.yml'.format(FLAGS.language)
+    save_file_path = f'rec_{FLAGS.language}_lite_train.yml'
     if os.path.isfile(save_file_path):
         os.remove(save_file_path)
 
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     with open(save_file_path, 'w') as f:
         yaml.dump(
             dict(global_config), f, default_flow_style=False, sort_keys=False)
-    logging.info("Project path is          :{}".format(project_path))
+    logging.info(f"Project path is          :{project_path}")
     logging.info("Train list path set to   :{}".format(global_config['Train'][
         'dataset']['label_file_list'][0]))
     logging.info("Eval list path set to    :{}".format(global_config['Eval'][
@@ -222,5 +222,6 @@ if __name__ == '__main__':
         'dataset']['data_dir']))
     logging.info("Dict path set to         :{}".format(global_config['Global'][
         'character_dict_path']))
-    logging.info("Config file set to       :configs/rec/multi_language/{}".
-                 format(save_file_path))
+    logging.info(
+        f"Config file set to       :configs/rec/multi_language/{save_file_path}"
+    )

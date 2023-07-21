@@ -62,9 +62,9 @@ class TableMasterLoss(nn.Layer):
         horizon_loss = horizon_loss.mean()
         vertical_loss = vertical_loss.mean()
         all_loss = structure_loss + horizon_loss + vertical_loss
-        losses.update({
+        losses |= {
             'loss': all_loss,
             'horizon_bbox_loss': horizon_loss,
-            'vertical_bbox_loss': vertical_loss
-        })
+            'vertical_bbox_loss': vertical_loss,
+        }
         return losses

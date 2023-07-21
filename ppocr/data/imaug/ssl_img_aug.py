@@ -42,18 +42,17 @@ class SSLRotateResize(object):
         data["image_r270"] = cv2.rotate(data["image_r180"],
                                         cv2.ROTATE_90_CLOCKWISE)
 
-        images = []
-        for key in ["image", "image_r90", "image_r180", "image_r270"]:
-            images.append(
-                resize_norm_img(
-                    data.pop(key),
-                    image_shape=self.image_shape,
-                    padding=self.padding)[0])
+        images = [
+            resize_norm_img(
+                data.pop(key), image_shape=self.image_shape, padding=self.padding
+            )[0]
+            for key in ["image", "image_r90", "image_r180", "image_r270"]
+        ]
         data["image"] = np.stack(images, axis=0)
         data["label"] = np.array(list(range(4)))
         if not self.select_all:
-            data["image"] = data["image"][0::2]  # just choose 0 and 180
-            data["label"] = data["label"][0:2]  # label needs to be continuous
+            data["image"] = data["image"][::2]
+            data["label"] = data["label"][:2]
         if self.mode == "test":
             data["image"] = data["image"][0]
             data["label"] = data["label"][0]

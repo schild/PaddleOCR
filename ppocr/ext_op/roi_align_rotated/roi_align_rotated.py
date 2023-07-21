@@ -60,7 +60,13 @@ class RoIAlignRotated(nn.Layer):
         self.clockwise = clockwise
 
     def forward(self, feats, rois):
-        output = roi_align_rotated(feats, rois, self.out_h, self.out_w,
-                                   self.spatial_scale, self.sample_num,
-                                   self.aligned, self.clockwise)
-        return output
+        return roi_align_rotated(
+            feats,
+            rois,
+            self.out_h,
+            self.out_w,
+            self.spatial_scale,
+            self.sample_num,
+            self.aligned,
+            self.clockwise,
+        )

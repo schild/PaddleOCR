@@ -41,5 +41,4 @@ def dice_coefficient(y_true_cls, y_pred_cls, training_mask):
     intersection = paddle.sum(y_true_cls * y_pred_cls * training_mask)
     union = paddle.sum(y_true_cls * training_mask) + paddle.sum(
         y_pred_cls * training_mask) + eps
-    loss = 1. - (2 * intersection / union)
-    return loss
+    return 1. - (2 * intersection / union)

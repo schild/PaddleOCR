@@ -18,10 +18,9 @@ __all__ = ['load_dygraph_pretrain']
 
 
 def load_dygraph_pretrain(model, logger, path=None, load_static_weights=False):
-    if not os.path.exists(path + '.pdparams'):
-        raise ValueError("Model pretrain path {} does not "
-                         "exists.".format(path))
-    param_state_dict = paddle.load(path + '.pdparams')
+    if not os.path.exists(f'{path}.pdparams'):
+        raise ValueError(f"Model pretrain path {path} does not exists.")
+    param_state_dict = paddle.load(f'{path}.pdparams')
     model.set_state_dict(param_state_dict)
-    logger.info("load pretrained model from {}".format(path))
+    logger.info(f"load pretrained model from {path}")
     return

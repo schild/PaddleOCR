@@ -77,11 +77,7 @@ class BottleneckBlock(nn.Layer):
         conv1 = self.conv1(y)
         conv2 = self.conv2(conv1)
 
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
-
+        short = inputs if self.shortcut else self.short(inputs)
         y = paddle.add(x=short, y=conv2)
         y = F.relu(y)
         return y
@@ -121,10 +117,7 @@ class BasicBlock(nn.Layer):
         y = self.conv0(inputs)
         conv1 = self.conv1(y)
 
-        if self.shortcut:
-            short = inputs
-        else:
-            short = self.short(inputs)
+        short = inputs if self.shortcut else self.short(inputs)
         y = paddle.add(x=short, y=conv1)
         y = F.relu(y)
         return y
@@ -142,13 +135,13 @@ class ResNet(nn.Layer):
         self.input_image_channel = in_channels
 
         supported_layers = [18, 34, 50, 101, 152]
-        assert layers in supported_layers, \
-            "supported layers are {} but input layer is {}".format(
-                supported_layers, layers)
+        assert (
+            layers in supported_layers
+        ), f"supported layers are {supported_layers} but input layer is {layers}"
 
         if layers == 18:
             depth = [2, 2, 2, 2]
-        elif layers == 34 or layers == 50:
+        elif layers in [34, 50]:
             depth = [3, 4, 6, 3]
         elif layers == 101:
             depth = [3, 4, 23, 3]
@@ -186,11 +179,11 @@ class ResNet(nn.Layer):
                 for i in range(depth[block]):
                     if layers in [101, 152] and block == 2:
                         if i == 0:
-                            conv_name = "res" + str(block + 2) + "a"
+                            conv_name = f"res{str(block + 2)}a"
                         else:
-                            conv_name = "res" + str(block + 2) + "b" + str(i)
+                            conv_name = f"res{str(block + 2)}b{str(i)}"
                     else:
-                        conv_name = "res" + str(block + 2) + chr(97 + i)
+                        conv_name = f"res{str(block + 2)}{chr(97 + i)}"
                     bottleneck_block = self.add_sublayer(
                         conv_name,
                         BottleneckBlock(
@@ -210,7 +203,7 @@ class ResNet(nn.Layer):
                 shortcut = False
                 block_list = []
                 for i in range(depth[block]):
-                    conv_name = "res" + str(block + 2) + chr(97 + i)
+                    conv_name = f"res{str(block + 2)}{chr(97 + i)}"
                     basic_block = self.add_sublayer(
                         conv_name,
                         BasicBlock(

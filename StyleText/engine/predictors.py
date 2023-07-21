@@ -24,8 +24,9 @@ from utils.logging import get_logger
 class StyleTextRecPredictor(object):
     def __init__(self, config):
         algorithm = config['Predictor']['algorithm']
-        assert algorithm in ["StyleTextRec"
-                             ], "Generator {} not supported.".format(algorithm)
+        assert algorithm in [
+            "StyleTextRec"
+        ], f"Generator {algorithm} not supported."
         use_gpu = config["Global"]['use_gpu']
         check_gpu(use_gpu)
         paddle.set_device('gpu' if use_gpu else 'cpu')
@@ -56,8 +57,7 @@ class StyleTextRecPredictor(object):
         fake_text = self.postprocess(style_text_result["fake_text"])
         fake_sk = self.postprocess(style_text_result["fake_sk"])
         fake_bg = self.postprocess(style_text_result["fake_bg"])
-        bbox = self.get_text_boundary(fake_text)
-        if bbox:
+        if bbox := self.get_text_boundary(fake_text):
             left, right, top, bottom = bbox
             fake_fusion = fake_fusion[top:bottom, left:right, :]
             fake_text = fake_text[top:bottom, left:right, :]

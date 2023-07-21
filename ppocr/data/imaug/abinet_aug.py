@@ -96,7 +96,7 @@ class CVRandomAffine(object):
 
         if translate is not None:
             assert isinstance(translate, (tuple, list)) and len(translate) == 2, \
-                "translate should be a list or tuple and it must be of length 2."
+                    "translate should be a list or tuple and it must be of length 2."
             for t in translate:
                 if not (0.0 <= t <= 1.0):
                     raise ValueError(
@@ -105,23 +105,23 @@ class CVRandomAffine(object):
 
         if scale is not None:
             assert isinstance(scale, (tuple, list)) and len(scale) == 2, \
-                "scale should be a list or tuple and it must be of length 2."
+                    "scale should be a list or tuple and it must be of length 2."
             for s in scale:
                 if s <= 0:
                     raise ValueError("scale values should be positive")
         self.scale = scale
 
-        if shear is not None:
-            if isinstance(shear, numbers.Number):
-                if shear < 0:
-                    raise ValueError(
-                        "If shear is a single number, it must be positive.")
-                self.shear = [shear]
-            else:
-                assert isinstance(shear, (tuple, list)) and (len(shear) == 2), \
-                    "shear should be a list or tuple and it must be of length 2."
-                self.shear = shear
+        if shear is None:
+            self.shear = shear
+
+        elif isinstance(shear, numbers.Number):
+            if shear < 0:
+                raise ValueError(
+                    "If shear is a single number, it must be positive.")
+            self.shear = [shear]
         else:
+            assert isinstance(shear, (tuple, list)) and (len(shear) == 2), \
+                    "shear should be a list or tuple and it must be of length 2."
             self.shear = shear
 
     def _get_inverse_affine_matrix(self, center, angle, translate, scale,
@@ -134,8 +134,8 @@ class CVRandomAffine(object):
 
         if not isinstance(shear, (tuple, list)) and len(shear) == 2:
             raise ValueError(
-                "Shear should be a single value or a tuple/list containing " +
-                "two values. Got {}".format(shear))
+                f"Shear should be a single value or a tuple/list containing two values. Got {shear}"
+            )
 
         rot = math.radians(angle)
         sx, sy = [math.radians(s) for s in shear]
@@ -179,14 +179,13 @@ class CVRandomAffine(object):
         else:
             scale = 1.0
 
-        if shears is not None:
-            if len(shears) == 1:
-                shear = [sample_sym(shears[0]), 0.]
-            elif len(shears) == 2:
-                shear = [sample_sym(shears[0]), sample_sym(shears[1])]
-        else:
+        if shears is None:
             shear = 0.0
 
+        elif len(shears) == 1:
+            shear = [sample_sym(shears[0]), 0.]
+        elif len(shears) == 2:
+            shear = [sample_sym(shears[0]), sample_sym(shears[1])]
         return angle, translations, scale, shear
 
     def __call__(self, img):
@@ -359,10 +358,7 @@ class CVGeometry(object):
             self.transforms = CVRandomPerspective(distortion=distortion)
 
     def __call__(self, img):
-        if random.random() < self.p:
-            return self.transforms(img)
-        else:
-            return img
+        return self.transforms(img) if random.random() < self.p else img
 
 
 class CVDeterioration(object):
@@ -381,11 +377,7 @@ class CVDeterioration(object):
         self.transforms = transforms
 
     def __call__(self, img):
-        if random.random() < self.p:
-
-            return self.transforms(img)
-        else:
-            return img
+        return self.transforms(img) if random.random() < self.p else img
 
 
 class CVColorJitter(object):
@@ -403,8 +395,7 @@ class CVColorJitter(object):
             hue=hue)
 
     def __call__(self, img):
-        if random.random() < self.p: return self.transforms(img)
-        else: return img
+        return self.transforms(img) if random.random() < self.p else img
 
 
 class SVTRDeterioration(object):
@@ -420,12 +411,11 @@ class SVTRDeterioration(object):
         self.transforms = transforms
 
     def __call__(self, img):
-        if random.random() < self.p:
-            random.shuffle(self.transforms)
-            transforms = Compose(self.transforms)
-            return transforms(img)
-        else:
+        if random.random() >= self.p:
             return img
+        random.shuffle(self.transforms)
+        transforms = Compose(self.transforms)
+        return transforms(img)
 
 
 class SVTRGeometry(object):
@@ -439,8 +429,7 @@ class SVTRGeometry(object):
                  p=0.5):
         self.aug_type = aug_type
         self.p = p
-        self.transforms = []
-        self.transforms.append(CVRandomRotation(degrees=degrees))
+        self.transforms = [CVRandomRotation(degrees=degrees)]
         self.transforms.append(CVRandomAffine(
                 degrees=degrees, translate=translate, scale=scale, shear=shear))
         self.transforms.append(CVRandomPerspective(distortion=distortion))
@@ -453,6 +442,4 @@ class SVTRGeometry(object):
                 img = transforms(img)
             else:
                 img = self.transforms[random.randint(0, 2)](img)
-            return img
-        else:
-            return img
+        return img

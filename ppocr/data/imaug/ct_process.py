@@ -31,13 +31,13 @@ class RandomScale():
         self.short_size = short_size
 
     def scale_aligned(self, img, scale):
-        oh, ow = img.shape[0:2]
+        oh, ow = img.shape[:2]
         h = int(oh * scale + 0.5)
         w = int(ow * scale + 0.5)
         if h % 32 != 0:
-            h = h + (32 - h % 32)
+            h += 32 - h % 32
         if w % 32 != 0:
-            w = w + (32 - w % 32)
+            w += 32 - w % 32
         img = cv2.resize(img, dsize=(w, h))
         factor_h = h / oh
         factor_w = w / ow
@@ -46,7 +46,7 @@ class RandomScale():
     def __call__(self, data):
         img = data['image']
 
-        h, w = img.shape[0:2]
+        h, w = img.shape[:2]
         random_scale = np.array([0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3])
         scale = (np.random.choice(random_scale) * self.short_size) / min(h, w)
         img, factor_h, factor_w = self.scale_aligned(img, scale)
@@ -105,9 +105,9 @@ class MakeShrink():
         words = data['texts']
         scale_factor = data['scale_factor']
 
-        gt_instance = np.zeros(img.shape[0:2], dtype='uint8')  # h,w
-        training_mask = np.ones(img.shape[0:2], dtype='uint8')
-        training_mask_distance = np.ones(img.shape[0:2], dtype='uint8')
+        gt_instance = np.zeros(img.shape[:2], dtype='uint8')
+        training_mask = np.ones(img.shape[:2], dtype='uint8')
+        training_mask_distance = np.ones(img.shape[:2], dtype='uint8')
 
         for i in range(len(bboxes)):
             bboxes[i] = np.reshape(bboxes[i] * (
@@ -122,18 +122,18 @@ class MakeShrink():
             cv2.drawContours(training_mask, [bboxes[i]], -1, 0, -1)
 
             # for not accurate annotation, use training_mask_distance
-            if words[i] == '###' or words[i] == '???':
+            if words[i] in ['###', '???']:
                 cv2.drawContours(training_mask_distance, [bboxes[i]], -1, 0, -1)
 
         # make shrink
-        gt_kernel_instance = np.zeros(img.shape[0:2], dtype='uint8')
+        gt_kernel_instance = np.zeros(img.shape[:2], dtype='uint8')
         kernel_bboxes = self.shrink(bboxes, self.kernel_scale)
         for i in range(len(bboxes)):
             cv2.drawContours(gt_kernel_instance, [kernel_bboxes[i]], -1, i + 1,
                              -1)
 
             # for training mask, kernel and background= 1, box region=0
-            if words[i] != '###' and words[i] != '???':
+            if words[i] not in ['###', '???']:
                 cv2.drawContours(training_mask, [kernel_bboxes[i]], -1, 1, -1)
 
         gt_kernel = gt_kernel_instance.copy()
@@ -206,14 +206,14 @@ class GroupRandomCropPadding():
     def __call__(self, data):
         imgs = data['image']
 
-        h, w = imgs[0].shape[0:2]
+        h, w = imgs[0].shape[:2]
         t_w, t_h = self.target_size
         p_w, p_h = self.target_size
         if w == t_w and h == t_h:
             return data
 
-        t_h = t_h if t_h < h else h
-        t_w = t_w if t_w < w else w
+        t_h = min(t_h, h)
+        t_w = min(t_w, w)
 
         if random.random() > 3.0 / 8.0 and np.max(imgs[1]) > 0:
             # make sure to crop the text region
@@ -273,20 +273,18 @@ class MakeCentripetalShift():
                     A, axis=0))**2,
                    axis=-1))
 
-        ind = np.argmin(dis, axis=-1)
-
-        return ind
+        return np.argmin(dis, axis=-1)
 
     def __call__(self, data):
         imgs = data['image']
 
         img, gt_instance, training_mask, gt_kernel_instance, gt_kernel, gt_kernel_inner, training_mask_distance = \
-                        imgs[0], imgs[1], imgs[2], imgs[3], imgs[4], imgs[5], imgs[6]
+                            imgs[0], imgs[1], imgs[2], imgs[3], imgs[4], imgs[5], imgs[6]
 
         max_instance = np.max(gt_instance)  # num bbox
 
         # make centripetal shift
-        gt_distance = np.zeros((2, *img.shape[0:2]), dtype=np.float32)
+        gt_distance = np.zeros((2, *img.shape[:2]), dtype=np.float32)
         for i in range(1, max_instance + 1):
             # kernel_reference
             ind = (gt_kernel_inner == i)
@@ -336,14 +334,14 @@ class ScaleAlignedShort():
 
         org_img_shape = img.shape
 
-        h, w = img.shape[0:2]
+        h, w = img.shape[:2]
         scale = self.short_size * 1.0 / min(h, w)
         h = int(h * scale + 0.5)
         w = int(w * scale + 0.5)
         if h % 32 != 0:
-            h = h + (32 - h % 32)
+            h += 32 - h % 32
         if w % 32 != 0:
-            w = w + (32 - w % 32)
+            w += 32 - w % 32
         img = cv2.resize(img, dsize=(w, h))
 
         new_img_shape = img.shape

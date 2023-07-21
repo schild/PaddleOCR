@@ -34,7 +34,7 @@ class PubTabDataSet(Dataset):
         data_source_num = len(label_file_list)
         ratio_list = dataset_config.get("ratio_list", [1.0])
         if isinstance(ratio_list, (float, int)):
-            ratio_list = [float(ratio_list)] * int(data_source_num)
+            ratio_list = [float(ratio_list)] * data_source_num
 
         assert len(
             ratio_list
@@ -45,7 +45,7 @@ class PubTabDataSet(Dataset):
 
         self.seed = seed
         self.mode = mode.lower()
-        logger.info("Initialize indexs of datasets:%s" % label_file_list)
+        logger.info(f"Initialize indexs of datasets:{label_file_list}")
         self.data_lines = self.get_image_info_list(label_file_list, ratio_list)
         # self.check(config['Global']['max_text_length'])
 
@@ -79,7 +79,7 @@ class PubTabDataSet(Dataset):
 
             img_path = os.path.join(self.data_dir, file_name)
             if not os.path.exists(img_path):
-                self.logger.warning("{} does not exist!".format(img_path))
+                self.logger.warning(f"{img_path} does not exist!")
                 continue
             if len(structure) == 0 or len(structure) > max_text_length:
                 continue
@@ -104,7 +104,7 @@ class PubTabDataSet(Dataset):
 
             img_path = os.path.join(self.data_dir, file_name)
             if not os.path.exists(img_path):
-                raise Exception("{} does not exist!".format(img_path))
+                raise Exception(f"{img_path} does not exist!")
             data = {
                 'img_path': img_path,
                 'cells': cells,
@@ -120,8 +120,8 @@ class PubTabDataSet(Dataset):
             import traceback
             err = traceback.format_exc()
             self.logger.error(
-                "When parsing line {}, error happened with msg: {}".format(
-                    data_line, err))
+                f"When parsing line {data_line}, error happened with msg: {err}"
+            )
             outs = None
         if outs is None:
             rnd_idx = np.random.randint(self.__len__(

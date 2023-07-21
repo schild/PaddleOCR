@@ -35,8 +35,7 @@ class StdTextDrawer(object):
                   crop=True,
                   style_input_width=None):
         if language not in self.support_languages:
-            self.logger.warning(
-                "language {} not supported, use en instead.".format(language))
+            self.logger.warning(f"language {language} not supported, use en instead.")
             language = "en"
         if crop:
             width = min(self.max_width, len(corpus) * self.height) + 4
@@ -63,7 +62,7 @@ class StdTextDrawer(object):
                     text_input = np.array(bg).astype(np.uint8)
                     text_input = text_input[:, 0:char_x, :]
 
-                    corpus_list.append(corpus[0:i])
+                    corpus_list.append(corpus[:i])
                     text_input_list.append(text_input)
                     corpus = corpus[i:]
                     i = 0
@@ -77,7 +76,7 @@ class StdTextDrawer(object):
                 text_input = np.array(bg).astype(np.uint8)
                 text_input = text_input[:, 0:char_x, :]
 
-                corpus_list.append(corpus[0:i])
+                corpus_list.append(corpus[:i])
                 text_input_list.append(text_input)
                 break
 

@@ -36,7 +36,7 @@ class RFLLoss(nn.Layer):
 
         self.total_loss = {}
         total_loss = 0.0
-        if isinstance(predicts, tuple) or isinstance(predicts, list):
+        if isinstance(predicts, (tuple, list)):
             cnt_outputs, seq_outputs = predicts
         else:
             cnt_outputs, seq_outputs = predicts, None
@@ -53,7 +53,7 @@ class RFLLoss(nn.Layer):
             batch_size, num_steps, num_classes = seq_outputs.shape[
                 0], seq_outputs.shape[1], seq_outputs.shape[2]
             assert len(targets.shape) == len(list(seq_outputs.shape)) - 1, \
-                "The target's shape and inputs's shape is [N, d] and [N, num_steps]"
+                    "The target's shape and inputs's shape is [N, d] and [N, num_steps]"
 
             inputs = seq_outputs[:, :-1, :]
             targets = targets[:, 1:]

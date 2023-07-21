@@ -46,12 +46,10 @@ class AugmenterBuilder(object):
                 for k, v in args['args'].items()
             })
         else:
-            raise RuntimeError('unknown augmenter arg: ' + str(args))
+            raise RuntimeError(f'unknown augmenter arg: {str(args)}')
 
     def to_tuple_if_list(self, obj):
-        if isinstance(obj, list):
-            return tuple(obj)
-        return obj
+        return tuple(obj) if isinstance(obj, list) else obj
 
 
 class IaaAugment():

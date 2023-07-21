@@ -55,31 +55,30 @@ class StringBundle:
         return StringBundle(cls.__create_key, localeStr)
 
     def getString(self, stringId):
-        assert(stringId in self.idToMessage), "Missing string id : " + stringId
+        assert (stringId in self.idToMessage), f"Missing string id : {stringId}"
         return self.idToMessage[stringId]
 
     def __createLookupFallbackList(self, localeStr):
-        resultPaths = []
         basePath = "\strings" if os.name == 'nt' else "/strings"
-        resultPaths.append(basePath)
+        resultPaths = [basePath]
         if localeStr is not None:
             # Don't follow standard BCP47. Simple fallback
             tags = re.split('[^a-zA-Z]', localeStr)
             for tag in tags:
                 lastPath = resultPaths[-1]
-                resultPaths.append(lastPath + '-' + tag)
+                resultPaths.append(f'{lastPath}-{tag}')
             resultPaths[-1] = __dirpath__ + resultPaths[-1] + ".properties"
 
         return resultPaths
 
     def __loadBundle(self, path):
-        PROP_SEPERATOR = '='
         f = QFile(path)
         if f.exists():
             if f.open(QIODevice.ReadOnly | QFile.Text):
                 text = QTextStream(f)
                 text.setCodec("UTF-8")
 
+            PROP_SEPERATOR = '='
             while not text.atEnd():
                 line = ustr(text.readLine())
                 key_value = line.split(PROP_SEPERATOR)

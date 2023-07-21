@@ -89,9 +89,10 @@ def main():
                         0] == 'DistillationSARLoss'
                     config['Loss']['loss_config_list'][-1][
                         'DistillationSARLoss']['ignore_index'] = char_num + 1
-                    out_channels_list = {}
-                    out_channels_list['CTCLabelDecode'] = char_num
-                    out_channels_list['SARLabelDecode'] = char_num + 2
+                    out_channels_list = {
+                        'CTCLabelDecode': char_num,
+                        'SARLabelDecode': char_num + 2,
+                    }
                     config['Architecture']['Models'][key]['Head'][
                         'out_channels_list'] = out_channels_list
                 else:
@@ -111,9 +112,10 @@ def main():
             else:
                 config['Loss']['loss_config_list'][1]['SARLoss'][
                     'ignore_index'] = char_num + 1
-            out_channels_list = {}
-            out_channels_list['CTCLabelDecode'] = char_num
-            out_channels_list['SARLabelDecode'] = char_num + 2
+            out_channels_list = {
+                'CTCLabelDecode': char_num,
+                'SARLabelDecode': char_num + 2,
+            }
             config['Architecture']['Head'][
                 'out_channels_list'] = out_channels_list
         else:  # base rec model
@@ -145,7 +147,7 @@ def main():
 
     logger.info('metric eval ***************')
     for k, v in metric.items():
-        logger.info('{}:{}'.format(k, v))
+        logger.info(f'{k}:{v}')
 
     save_path = config["Global"]["save_inference_dir"]
 

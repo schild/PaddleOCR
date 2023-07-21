@@ -28,16 +28,12 @@ from .vqa_token_layoutlm_loss import VQASerTokenLayoutLMLoss
 
 
 def _sum_loss(loss_dict):
-    if "loss" in loss_dict.keys():
-        return loss_dict
-    else:
+    if "loss" not in loss_dict.keys():
         loss_dict["loss"] = 0.
         for k, value in loss_dict.items():
-            if k == "loss":
-                continue
-            else:
+            if k != "loss":
                 loss_dict["loss"] += value
-        return loss_dict
+    return loss_dict
 
 
 class DistillationDMLLoss(DMLLoss):
@@ -72,14 +68,10 @@ class DistillationDMLLoss(DMLLoss):
             return [model_name_pairs]
 
     def _check_maps_name(self, maps_name):
-        if maps_name is None:
+        if maps_name is None or type(maps_name) not in [str, list]:
             return None
-        elif type(maps_name) == str:
-            return [maps_name]
-        elif type(maps_name) == list:
-            return [maps_name]
         else:
-            return None
+            return [maps_name]
 
     def _slice_out(self, outs):
         new_outs = {}
@@ -95,10 +87,10 @@ class DistillationDMLLoss(DMLLoss):
         return new_outs
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, pair in enumerate(self.model_name_pairs):
-            out1 = predicts[pair[0]]
             out2 = predicts[pair[1]]
+            out1 = predicts[pair[0]]
             if self.key is not None:
                 out1 = out1[self.key]
                 out2 = out2[self.key]
@@ -111,10 +103,9 @@ class DistillationDMLLoss(DMLLoss):
                     loss = super().forward(out1, out2)
                 if isinstance(loss, dict):
                     for key in loss:
-                        loss_dict["{}_{}_{}_{}".format(key, pair[0], pair[1],
-                                                       idx)] = loss[key]
+                        loss_dict[f"{key}_{pair[0]}_{pair[1]}_{idx}"] = loss[key]
                 else:
-                    loss_dict["{}_{}".format(self.name, idx)] = loss
+                    loss_dict[f"{self.name}_{idx}"] = loss
             else:
                 outs1 = self._slice_out(out1)
                 outs2 = self._slice_out(out2)
@@ -122,11 +113,9 @@ class DistillationDMLLoss(DMLLoss):
                     loss = super().forward(outs1[k], outs2[k])
                     if isinstance(loss, dict):
                         for key in loss:
-                            loss_dict["{}_{}_{}_{}_{}".format(key, pair[
-                                0], pair[1], self.maps_name, idx)] = loss[key]
+                            loss_dict[f"{key}_{pair[0]}_{pair[1]}_{self.maps_name}_{idx}"] = loss[key]
                     else:
-                        loss_dict["{}_{}_{}".format(self.name, self.maps_name[
-                            _c], idx)] = loss
+                        loss_dict[f"{self.name}_{self.maps_name[_c]}_{idx}"] = loss
 
         loss_dict = _sum_loss(loss_dict)
 
@@ -146,7 +135,7 @@ class DistillationCTCLoss(CTCLoss):
         self.multi_head = multi_head
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, model_name in enumerate(self.model_name_list):
             out = predicts[model_name]
             if self.key is not None:
@@ -158,10 +147,9 @@ class DistillationCTCLoss(CTCLoss):
                 loss = super().forward(out, batch)
             if isinstance(loss, dict):
                 for key in loss:
-                    loss_dict["{}_{}_{}".format(self.name, model_name,
-                                                idx)] = loss[key]
+                    loss_dict[f"{self.name}_{model_name}_{idx}"] = loss[key]
             else:
-                loss_dict["{}_{}".format(self.name, model_name)] = loss
+                loss_dict[f"{self.name}_{model_name}"] = loss
         return loss_dict
 
 
@@ -180,7 +168,7 @@ class DistillationSARLoss(SARLoss):
         self.multi_head = multi_head
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, model_name in enumerate(self.model_name_list):
             out = predicts[model_name]
             if self.key is not None:
@@ -192,10 +180,9 @@ class DistillationSARLoss(SARLoss):
                 loss = super().forward(out, batch)
             if isinstance(loss, dict):
                 for key in loss:
-                    loss_dict["{}_{}_{}".format(self.name, model_name,
-                                                idx)] = loss[key]
+                    loss_dict[f"{self.name}_{model_name}_{idx}"] = loss[key]
             else:
-                loss_dict["{}_{}".format(self.name, model_name)] = loss
+                loss_dict[f"{self.name}_{model_name}"] = loss
         return loss_dict
 
 
@@ -227,10 +214,10 @@ class DistillationDBLoss(DBLoss):
                 for key in loss.keys():
                     if key == "loss":
                         continue
-                    name = "{}_{}_{}".format(self.name, model_name, key)
+                    name = f"{self.name}_{model_name}_{key}"
                     loss_dict[name] = loss[key]
             else:
-                loss_dict["{}_{}".format(self.name, model_name)] = loss
+                loss_dict[f"{self.name}_{model_name}"] = loss
 
         loss_dict = _sum_loss(loss_dict)
         return loss_dict
@@ -253,12 +240,12 @@ class DistillationDilaDBLoss(DBLoss):
         self.key = key
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, pair in enumerate(self.model_name_pairs):
-            stu_outs = predicts[pair[0]]
-            tch_outs = predicts[pair[1]]
             if self.key is not None:
+                stu_outs = predicts[pair[0]]
                 stu_preds = stu_outs[self.key]
+                tch_outs = predicts[pair[1]]
                 tch_preds = tch_outs[self.key]
 
             stu_shrink_maps = stu_preds[:, 0, :, :]
@@ -284,7 +271,7 @@ class DistillationDilaDBLoss(DBLoss):
                                               label_shrink_mask)
 
             # k = f"{self.name}_{pair[0]}_{pair[1]}"
-            k = "{}_{}_{}".format(self.name, pair[0], pair[1])
+            k = f"{self.name}_{pair[0]}_{pair[1]}"
             loss_dict[k] = bce_loss + loss_binary_maps
 
         loss_dict = _sum_loss(loss_dict)
@@ -305,10 +292,10 @@ class DistillationDistanceLoss(DistanceLoss):
         assert isinstance(model_name_pairs, list)
         self.key = key
         self.model_name_pairs = model_name_pairs
-        self.name = name + "_l2"
+        self.name = f"{name}_l2"
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, pair in enumerate(self.model_name_pairs):
             out1 = predicts[pair[0]]
             out2 = predicts[pair[1]]
@@ -318,11 +305,9 @@ class DistillationDistanceLoss(DistanceLoss):
             loss = super().forward(out1, out2)
             if isinstance(loss, dict):
                 for key in loss:
-                    loss_dict["{}_{}_{}".format(self.name, key, idx)] = loss[
-                        key]
+                    loss_dict[f"{self.name}_{key}_{idx}"] = loss[key]
             else:
-                loss_dict["{}_{}_{}_{}".format(self.name, pair[0], pair[1],
-                                               idx)] = loss
+                loss_dict[f"{self.name}_{pair[0]}_{pair[1]}_{idx}"] = loss
         return loss_dict
 
 
@@ -338,13 +323,13 @@ class DistillationVQASerTokenLayoutLMLoss(VQASerTokenLayoutLMLoss):
         self.name = name
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, model_name in enumerate(self.model_name_list):
             out = predicts[model_name]
             if self.key is not None:
                 out = out[self.key]
             loss = super().forward(out, batch)
-            loss_dict["{}_{}".format(self.name, model_name)] = loss["loss"]
+            loss_dict[f"{self.name}_{model_name}"] = loss["loss"]
         return loss_dict
 
 
@@ -361,13 +346,13 @@ class DistillationLossFromOutput(LossFromOutput):
         self.dist_key = dist_key
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, model_name in enumerate(self.model_name_list):
             out = predicts[model_name]
             if self.dist_key is not None:
                 out = out[self.dist_key]
             loss = super().forward(out, batch)
-            loss_dict["{}_{}".format(self.name, model_name)] = loss["loss"]
+            loss_dict[f"{self.name}_{model_name}"] = loss["loss"]
         return loss_dict
 
 
@@ -390,7 +375,7 @@ class DistillationSERDMLLoss(DMLLoss):
         self.model_name_pairs = model_name_pairs
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, pair in enumerate(self.model_name_pairs):
             out1 = predicts[pair[0]]
             out2 = predicts[pair[1]]
@@ -406,8 +391,7 @@ class DistillationSERDMLLoss(DMLLoss):
                 out1 = out1[active_output]
                 out2 = out2[active_output]
 
-            loss_dict["{}_{}".format(self.name, idx)] = super().forward(out1,
-                                                                        out2)
+            loss_dict[f"{self.name}_{idx}"] = super().forward(out1, out2)
 
         return loss_dict
 
@@ -425,10 +409,10 @@ class DistillationVQADistanceLoss(DistanceLoss):
         self.key = key
         self.index = index
         self.model_name_pairs = model_name_pairs
-        self.name = name + "_l2"
+        self.name = f"{name}_l2"
 
     def forward(self, predicts, batch):
-        loss_dict = dict()
+        loss_dict = {}
         for idx, pair in enumerate(self.model_name_pairs):
             out1 = predicts[pair[0]]
             out2 = predicts[pair[1]]
@@ -453,9 +437,7 @@ class DistillationVQADistanceLoss(DistanceLoss):
             loss = super().forward(out1, out2)
             if isinstance(loss, dict):
                 for key in loss:
-                    loss_dict["{}_{}nohu_{}".format(self.name, key,
-                                                    idx)] = loss[key]
+                    loss_dict[f"{self.name}_{key}nohu_{idx}"] = loss[key]
             else:
-                loss_dict["{}_{}_{}_{}".format(self.name, pair[0], pair[1],
-                                               idx)] = loss
+                loss_dict[f"{self.name}_{pair[0]}_{pair[1]}_{idx}"] = loss
         return loss_dict

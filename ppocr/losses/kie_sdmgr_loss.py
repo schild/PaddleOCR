@@ -70,7 +70,7 @@ class SDMGRLoss(nn.Layer):
 
         maxk = max(topk)
         if pred.shape[0] == 0:
-            accu = [pred.new_tensor(0.) for i in range(len(topk))]
+            accu = [pred.new_tensor(0.) for _ in range(len(topk))]
             return accu[0] if return_single else accu
         pred_value, pred_label = paddle.topk(pred, maxk, axis=1)
         pred_label = pred_label.transpose(

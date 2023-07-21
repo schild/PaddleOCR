@@ -37,16 +37,17 @@ class VQATokenPad(object):
         self.infer_mode = infer_mode
 
     def __call__(self, data):
-        needs_to_be_padded = self.pad_to_max_seq_len and len(data[
-            "input_ids"]) < self.max_seq_len
-
-        if needs_to_be_padded:
-            if 'tokenizer_params' in data:
-                tokenizer_params = data.pop('tokenizer_params')
-            else:
-                tokenizer_params = dict(
-                    padding_side='right', pad_token_type_id=0, pad_token_id=1)
-
+        if (
+            needs_to_be_padded := self.pad_to_max_seq_len
+            and len(data["input_ids"]) < self.max_seq_len
+        ):
+            tokenizer_params = (
+                data.pop('tokenizer_params')
+                if 'tokenizer_params' in data
+                else dict(
+                    padding_side='right', pad_token_type_id=0, pad_token_id=1
+                )
+            )
             difference = self.max_seq_len - len(data["input_ids"])
             if tokenizer_params['padding_side'] == 'right':
                 if self.return_attention_mask:
@@ -85,9 +86,8 @@ class VQATokenPad(object):
                     data["labels"] = [self.pad_token_label_id
                                       ] * difference + data["labels"]
                 data["bbox"] = [[0, 0, 0, 0]] * difference + data["bbox"]
-        else:
-            if self.return_attention_mask:
-                data["attention_mask"] = [1] * len(data["input_ids"])
+        elif self.return_attention_mask:
+            data["attention_mask"] = [1] * len(data["input_ids"])
 
         for key in data:
             if key in [
@@ -95,10 +95,9 @@ class VQATokenPad(object):
                     'attention_mask'
             ]:
                 if self.infer_mode:
-                    if key != 'labels':
-                        length = min(len(data[key]), self.max_seq_len)
-                        data[key] = data[key][:length]
-                    else:
+                    if key == 'labels':
                         continue
+                    length = min(len(data[key]), self.max_seq_len)
+                    data[key] = data[key][:length]
                 data[key] = np.array(data[key], dtype='int64')
         return data

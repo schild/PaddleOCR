@@ -35,14 +35,18 @@ class MobileNetV3(nn.Layer):
         if large_stride is None:
             large_stride = [1, 2, 2, 2]
 
-        assert isinstance(large_stride, list), "large_stride type must " \
-                                               "be list but got {}".format(type(large_stride))
-        assert isinstance(small_stride, list), "small_stride type must " \
-                                               "be list but got {}".format(type(small_stride))
-        assert len(large_stride) == 4, "large_stride length must be " \
-                                       "4 but got {}".format(len(large_stride))
-        assert len(small_stride) == 4, "small_stride length must be " \
-                                       "4 but got {}".format(len(small_stride))
+        assert isinstance(
+            large_stride, list
+        ), f"large_stride type must be list but got {type(large_stride)}"
+        assert isinstance(
+            small_stride, list
+        ), f"small_stride type must be list but got {type(small_stride)}"
+        assert (
+            len(large_stride) == 4
+        ), f"large_stride length must be 4 but got {len(large_stride)}"
+        assert (
+            len(small_stride) == 4
+        ), f"small_stride length must be 4 but got {len(small_stride)}"
 
         if model_name == "large":
             cfg = [
@@ -81,12 +85,12 @@ class MobileNetV3(nn.Layer):
             ]
             cls_ch_squeeze = 576
         else:
-            raise NotImplementedError("mode[" + model_name +
-                                      "_model] is not implemented!")
+            raise NotImplementedError(f"mode[{model_name}_model] is not implemented!")
 
         supported_scale = [0.35, 0.5, 0.75, 1.0, 1.25]
-        assert scale in supported_scale, \
-            "supported scales are {} but input scale is {}".format(supported_scale, scale)
+        assert (
+            scale in supported_scale
+        ), f"supported scales are {supported_scale} but input scale is {scale}"
 
         inplanes = 16
         # conv1
@@ -99,10 +103,9 @@ class MobileNetV3(nn.Layer):
             groups=1,
             if_act=True,
             act='hardswish')
-        i = 0
         block_list = []
         inplanes = make_divisible(inplanes * scale)
-        for (k, exp, c, se, nl, s) in cfg:
+        for k, exp, c, se, nl, s in cfg:
             se = se and not self.disable_se
             block_list.append(
                 ResidualUnit(
@@ -114,7 +117,6 @@ class MobileNetV3(nn.Layer):
                     use_se=se,
                     act=nl))
             inplanes = make_divisible(scale * c)
-            i += 1
         self.blocks = nn.Sequential(*block_list)
 
         self.conv2 = ConvBNLayer(

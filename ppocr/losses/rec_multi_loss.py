@@ -34,7 +34,7 @@ class MultiLoss(nn.Layer):
         for loss_info in self.loss_list:
             for name, param in loss_info.items():
                 if param is not None:
-                    kwargs.update(param)
+                    kwargs |= param
                 loss = eval(name)(**kwargs)
                 self.loss_funcs[name] = loss
 
@@ -50,8 +50,7 @@ class MultiLoss(nn.Layer):
                 loss = loss_func(predicts['sar'],
                                  batch[:1] + batch[2:])['loss'] * self.weight_2
             else:
-                raise NotImplementedError(
-                    '{} is not supported in MultiLoss yet'.format(name))
+                raise NotImplementedError(f'{name} is not supported in MultiLoss yet')
             self.total_loss[name] = loss
             total_loss += loss
         self.total_loss['loss'] = total_loss

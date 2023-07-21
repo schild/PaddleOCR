@@ -164,7 +164,7 @@ def rotate_bbox(img, text_polys, angle, scale=1):
     rot_mat[1, 2] += rot_move[1]
 
     # ---------------------- rotate box ----------------------
-    rot_text_polys = list()
+    rot_text_polys = []
     for bbox in text_polys:
         point1 = np.dot(rot_mat, np.array([bbox[0, 0], bbox[0, 1], 1]))
         point2 = np.dot(rot_mat, np.array([bbox[1, 0], bbox[1, 1], 1]))

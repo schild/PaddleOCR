@@ -35,7 +35,6 @@ class RecOp(Op):
         raw_im = base64.b64decode(input_dict["image"].encode('utf8'))
         data = np.fromstring(raw_im, np.uint8)
         im = cv2.imdecode(data, cv2.IMREAD_COLOR)
-        feed_list = []
         max_wh_ratio = 0
         ## Many mini-batchs, the type of feed_data is list.
         max_batch_size = 6  # len(dt_boxes)
@@ -43,17 +42,16 @@ class RecOp(Op):
         # If max_batch_size is 0, skipping predict stage
         if max_batch_size == 0:
             return {}, True, None, ""
-        boxes_size = max_batch_size
-        rem = boxes_size % max_batch_size
+        rem = 0
 
-        h, w = im.shape[0:2]
+        h, w = im.shape[:2]
         wh_ratio = w * 1.0 / h
         max_wh_ratio = max(max_wh_ratio, wh_ratio)
         _, w, h = self.ocr_reader.resize_norm_img(im, max_wh_ratio).shape
         norm_img = self.ocr_reader.resize_norm_img(im, max_batch_size)
         norm_img = norm_img[np.newaxis, :]
         feed = {"x": norm_img.copy()}
-        feed_list.append(feed)
+        feed_list = [feed]
         return feed_list, False, None, ""
 
     def postprocess(self, input_dicts, fetch_data, data_id, log_id):
@@ -77,8 +75,7 @@ class RecOp(Op):
 
 class OcrService(WebService):
     def get_pipeline_response(self, read_op):
-        rec_op = RecOp(name="rec", input_ops=[read_op])
-        return rec_op
+        return RecOp(name="rec", input_ops=[read_op])
 
 
 uci_service = OcrService(name="ocr")

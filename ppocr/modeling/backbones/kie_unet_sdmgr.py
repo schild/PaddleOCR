@@ -139,7 +139,7 @@ class Kie_backbone(nn.Layer):
     def bbox2roi(self, bbox_list):
         rois_list = []
         rois_num = []
-        for img_id, bboxes in enumerate(bbox_list):
+        for bboxes in bbox_list:
             rois_num.append(bboxes.shape[0])
             rois_list.append(bboxes)
         rois = paddle.concat(rois_list, 0)

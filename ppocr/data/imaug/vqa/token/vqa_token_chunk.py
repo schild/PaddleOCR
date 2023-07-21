@@ -41,9 +41,7 @@ class VQASerTokenChunk(object):
                     encoded_inputs_example[key] = data[key]
 
             encoded_inputs_all.append(encoded_inputs_example)
-        if len(encoded_inputs_all) == 0:
-            return None
-        return encoded_inputs_all[0]
+        return None if not encoded_inputs_all else encoded_inputs_all[0]
 
 
 class VQAReTokenChunk(object):
@@ -89,30 +87,29 @@ class VQAReTokenChunk(object):
                     global_to_local_map[entity_id] = len(entities_in_this_span)
                     entities_in_this_span.append(entity)
 
-            # select relations in current chunk
-            relations_in_this_span = []
-            for relation in relations:
-                if (index <= relation["start_index"] < index + self.max_seq_len
-                        and index <= relation["end_index"] <
-                        index + self.max_seq_len):
-                    relations_in_this_span.append({
-                        "head": global_to_local_map[relation["head"]],
-                        "tail": global_to_local_map[relation["tail"]],
-                        "start_index": relation["start_index"] - index,
-                        "end_index": relation["end_index"] - index,
-                    })
-            item.update({
+            relations_in_this_span = [
+                {
+                    "head": global_to_local_map[relation["head"]],
+                    "tail": global_to_local_map[relation["tail"]],
+                    "start_index": relation["start_index"] - index,
+                    "end_index": relation["end_index"] - index,
+                }
+                for relation in relations
+                if (
+                    index <= relation["start_index"] < index + self.max_seq_len
+                    and index <= relation["end_index"] < index + self.max_seq_len
+                )
+            ]
+            item |= {
                 "entities": self.reformat(entities_in_this_span),
                 "relations": self.reformat(relations_in_this_span),
-            })
+            }
             if len(item['entities']) > 0:
                 item['entities']['label'] = [
                     self.entities_labels[x] for x in item['entities']['label']
                 ]
                 encoded_inputs_all.append(item)
-        if len(encoded_inputs_all) == 0:
-            return None
-        return encoded_inputs_all[0]
+        return None if not encoded_inputs_all else encoded_inputs_all[0]
 
     def reformat(self, data):
         new_data = defaultdict(list)

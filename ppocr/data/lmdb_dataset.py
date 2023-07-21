@@ -35,7 +35,7 @@ class LMDBDataSet(Dataset):
         self.do_shuffle = loader_config['shuffle']
 
         self.lmdb_sets = self.load_hierarchical_lmdb_dataset(data_dir)
-        logger.info("Initialize indexs of datasets:%s" % data_dir)
+        logger.info(f"Initialize indexs of datasets:{data_dir}")
         self.data_idx_order_list = self.dataset_traversal()
         if self.do_shuffle:
             np.random.shuffle(self.data_idx_order_list)
@@ -49,7 +49,7 @@ class LMDBDataSet(Dataset):
     def load_hierarchical_lmdb_dataset(self, data_dir):
         lmdb_sets = {}
         dataset_idx = 0
-        for dirpath, dirnames, filenames in os.walk(data_dir + '/'):
+        for dirpath, dirnames, filenames in os.walk(f'{data_dir}/'):
             if not dirnames:
                 env = lmdb.open(
                     dirpath,
@@ -61,15 +61,15 @@ class LMDBDataSet(Dataset):
                 txn = env.begin(write=False)
                 num_samples = int(txn.get('num-samples'.encode()))
                 lmdb_sets[dataset_idx] = {"dirpath":dirpath, "env":env, \
-                    "txn":txn, "num_samples":num_samples}
+                        "txn":txn, "num_samples":num_samples}
                 dataset_idx += 1
         return lmdb_sets
 
     def dataset_traversal(self):
         lmdb_num = len(self.lmdb_sets)
-        total_sample_num = 0
-        for lno in range(lmdb_num):
-            total_sample_num += self.lmdb_sets[lno]['num_samples']
+        total_sample_num = sum(
+            self.lmdb_sets[lno]['num_samples'] for lno in range(lmdb_num)
+        )
         data_idx_order_list = np.zeros((total_sample_num, 2))
         beg_idx = 0
         for lno in range(lmdb_num):
@@ -77,7 +77,7 @@ class LMDBDataSet(Dataset):
             end_idx = beg_idx + tmp_sample_num
             data_idx_order_list[beg_idx:end_idx, 0] = lno
             data_idx_order_list[beg_idx:end_idx, 1] \
-                = list(range(tmp_sample_num))
+                    = list(range(tmp_sample_num))
             data_idx_order_list[beg_idx:end_idx, 1] += 1
             beg_idx = beg_idx + tmp_sample_num
         return data_idx_order_list
@@ -90,16 +90,17 @@ class LMDBDataSet(Dataset):
         if imgdata is None:
             return None
         imgori = cv2.imdecode(imgdata, 1)
-        if imgori is None:
-            return None
-        return imgori
+        return None if imgori is None else imgori
 
     def get_ext_data(self):
-        ext_data_num = 0
-        for op in self.ops:
-            if hasattr(op, 'ext_data_num'):
-                ext_data_num = getattr(op, 'ext_data_num')
-                break
+        ext_data_num = next(
+            (
+                getattr(op, 'ext_data_num')
+                for op in self.ops
+                if hasattr(op, 'ext_data_num')
+            ),
+            0,
+        )
         load_data_ops = self.ops[:self.ext_op_transform_idx]
         ext_data = []
 
@@ -139,8 +140,7 @@ class LMDBDataSet(Dataset):
         if sample_info is None:
             return self.__getitem__(np.random.randint(self.__len__()))
         img, label = sample_info
-        data = {'image': img, 'label': label}
-        data['ext_data'] = self.get_ext_data()
+        data = {'image': img, 'label': label, 'ext_data': self.get_ext_data()}
         outs = transform(data, self.ops)
         if outs is None:
             return self.__getitem__(np.random.randint(self.__len__()))
@@ -156,8 +156,7 @@ class LMDBDataSetSR(LMDBDataSet):
         buf = six.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
-        im = Image.open(buf).convert(type)
-        return im
+        return Image.open(buf).convert(type)
 
     def str_filt(self, str_, voc_type):
         alpha_dict = {

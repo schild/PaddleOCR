@@ -32,10 +32,10 @@ class RandomScaling:
             scale (tuple(float)) : The range of scaling.
         """
         assert isinstance(size, int)
-        assert isinstance(scale, float) or isinstance(scale, tuple)
+        assert isinstance(scale, (float, tuple))
         self.size = size
         self.scale = scale if isinstance(scale, tuple) \
-            else (1 - scale, 1 + scale)
+                else (1 - scale, 1 + scale)
 
     def __call__(self, data):
         image = data['image']
@@ -82,7 +82,7 @@ class RandomCropFlip:
         self.min_area_ratio = min_area_ratio
 
     def __call__(self, results):
-        for i in range(self.iter_num):
+        for _ in range(self.iter_num):
             results = self.random_crop_flip(results)
 
         return results
@@ -350,8 +350,7 @@ class RandomCropPolyInstances:
         return results
 
     def __repr__(self):
-        repr_str = self.__class__.__name__
-        return repr_str
+        return self.__class__.__name__
 
 
 class RandomRotatePolyInstances:
@@ -406,12 +405,10 @@ class RandomRotatePolyInstances:
         canvas_h = int(w * math.fabs(sin) + h * math.fabs(cos))
         canvas_w = int(w * math.fabs(cos) + h * math.fabs(sin))
 
-        canvas_size = (canvas_h, canvas_w)
-        return canvas_size
+        return canvas_h, canvas_w
 
     def sample_angle(self, max_angle):
-        angle = np.random.random_sample() * 2 * max_angle - max_angle
-        return angle
+        return np.random.random_sample() * 2 * max_angle - max_angle
 
     def rotate_img(self, img, angle, canvas_size):
         h, w = img.shape[:2]
@@ -467,8 +464,7 @@ class RandomRotatePolyInstances:
         return results
 
     def __repr__(self):
-        repr_str = self.__class__.__name__
-        return repr_str
+        return self.__class__.__name__
 
 
 class SquareResizePad:
@@ -520,10 +516,7 @@ class SquareResizePad:
                               np.random.randint(0, w * 7 // 8))
             img_cut = img[h_ind:(h_ind + h // 9), w_ind:(w_ind + w // 9)]
             expand_img = cv2.resize(img_cut, (pad_size, pad_size))
-        if h > w:
-            y0, x0 = 0, (h - w) // 2
-        else:
-            y0, x0 = (w - h) // 2, 0
+        y0, x0 = (0, (h - w) // 2) if h > w else ((w - h) // 2, 0)
         expand_img[y0:y0 + h, x0:x0 + w] = img
         offset = (x0, y0)
 
@@ -560,5 +553,4 @@ class SquareResizePad:
         return results
 
     def __repr__(self):
-        repr_str = self.__class__.__name__
-        return repr_str
+        return self.__class__.__name__

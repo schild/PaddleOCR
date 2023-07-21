@@ -16,21 +16,21 @@ This code is refer from:
 https://github.com/FudanVI/FudanOCR/blob/main/scene-text-telescope/loss/text_focus_loss.py
 """
 
+
 import paddle.nn as nn
 import paddle
 import numpy as np
 import pickle as pkl
 
 standard_alphebet = '-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-standard_dict = {}
-for index in range(len(standard_alphebet)):
-    standard_dict[standard_alphebet[index]] = index
+standard_dict = {
+    standard_alphebet[index]: index for index in range(len(standard_alphebet))
+}
 
 
 def load_confuse_matrix(confuse_dict_path):
-    f = open(confuse_dict_path, 'rb')
-    data = pkl.load(f)
-    f.close()
+    with open(confuse_dict_path, 'rb') as f:
+        data = pkl.load(f)
     number = data[:10]
     upper = data[10:36]
     lower = data[36:]
@@ -58,9 +58,12 @@ def weight_cross_entropy(pred, gt, weight_table):
     weight = weight_table[gt]
     pred_exp = paddle.exp(pred)
     pred_exp_weight = weight * pred_exp
-    loss = 0
-    for i in range(len(gt)):
-        loss -= paddle.log(pred_exp_weight[i][gt[i]] / paddle.sum(pred_exp_weight, 1)[i])
+    loss = 0 - sum(
+        paddle.log(
+            pred_exp_weight[i][gt[i]] / paddle.sum(pred_exp_weight, 1)[i]
+        )
+        for i in range(len(gt))
+    )
     return loss / batch
 
 

@@ -50,10 +50,11 @@ class PACT(paddle.nn.Layer):
     def __init__(self):
         super(PACT, self).__init__()
         alpha_attr = paddle.ParamAttr(
-            name=self.full_name() + ".pact",
+            name=f"{self.full_name()}.pact",
             initializer=paddle.nn.initializer.Constant(value=20),
             learning_rate=1.0,
-            regularizer=paddle.regularizer.L2Decay(2e-5))
+            regularizer=paddle.regularizer.L2Decay(2e-5),
+        )
 
         self.alpha = self.create_parameter(
             shape=[1], attr=alpha_attr, dtype='float32')
@@ -92,8 +93,7 @@ quant_config = {
 def sample_generator(loader):
     def __reader__():
         for indx, data in enumerate(loader):
-            images = np.array(data[0])
-            yield images
+            yield np.array(data[0])
 
     return __reader__
 

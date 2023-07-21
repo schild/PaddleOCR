@@ -93,8 +93,7 @@ class RecOp(Op):
         if max_batch_size == 0:
             return {}, True, None, ""
         boxes_size = len(dt_boxes)
-        batch_size = boxes_size // max_batch_size
-        rem = boxes_size % max_batch_size
+        batch_size, rem = divmod(boxes_size, max_batch_size)
         for bt_idx in range(0, batch_size + 1):
             imgs = None
             boxes_num_in_one_batch = 0
@@ -106,8 +105,7 @@ class RecOp(Op):
             elif bt_idx < batch_size:
                 boxes_num_in_one_batch = max_batch_size
             else:
-                _LOGGER.error("batch_size error, bt_idx={}, batch_size={}".
-                              format(bt_idx, batch_size))
+                _LOGGER.error(f"batch_size error, bt_idx={bt_idx}, batch_size={batch_size}")
                 break
 
             start = bt_idx * max_batch_size
@@ -116,7 +114,7 @@ class RecOp(Op):
             for box_idx in range(start, end):
                 boximg = self.get_rotate_crop_image(im, dt_boxes[box_idx])
                 img_list.append(boximg)
-                h, w = boximg.shape[0:2]
+                h, w = boximg.shape[:2]
                 wh_ratio = w * 1.0 / h
                 max_wh_ratio = max(max_wh_ratio, wh_ratio)
             _, w, h = self.ocr_reader.resize_norm_img(img_list[0],
@@ -158,8 +156,7 @@ class RecOp(Op):
 class OcrService(WebService):
     def get_pipeline_response(self, read_op):
         det_op = DetOp(name="det", input_ops=[read_op])
-        rec_op = RecOp(name="rec", input_ops=[det_op])
-        return rec_op
+        return RecOp(name="rec", input_ops=[det_op])
 
 
 uci_service = OcrService(name="ocr")

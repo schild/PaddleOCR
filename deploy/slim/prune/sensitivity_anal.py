@@ -39,14 +39,15 @@ dist.get_world_size()
 
 
 def get_pruned_params(parameters):
-    params = []
-
-    for param in parameters:
-        if len(
-                param.shape
-        ) == 4 and 'depthwise' not in param.name and 'transpose' not in param.name and "conv2d_57" not in param.name and "conv2d_56" not in param.name:
-            params.append(param.name)
-    return params
+    return [
+        param.name
+        for param in parameters
+        if len(param.shape) == 4
+        and 'depthwise' not in param.name
+        and 'transpose' not in param.name
+        and "conv2d_57" not in param.name
+        and "conv2d_56" not in param.name
+    ]
 
 
 def main(config, device, logger, vdl_writer):

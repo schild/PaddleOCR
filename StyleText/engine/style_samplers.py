@@ -39,7 +39,7 @@ class DatasetSampler(object):
         else:
             rel_image_path = self.path_label_list[self.index]
             label = None
-        img_path = "{}/{}".format(self.image_home, rel_image_path)
+        img_path = f"{self.image_home}/{rel_image_path}"
         image = cv2.imread(img_path)
         origin_height = image.shape[0]
         ratio = self.height / origin_height
@@ -48,15 +48,11 @@ class DatasetSampler(object):
         image = cv2.resize(image, (width, height))
 
         self.index += 1
-        if label:
-            return {"image": image, "label": label}
-        else:
-            return {"image": image}
+        return {"image": image, "label": label} if label else {"image": image}
 
 
 def duplicate_image(image, width):
     image_width = image.shape[1]
     dup_num = width // image_width + 1
     image = np.tile(image, reps=[1, dup_num, 1])
-    cropped_image = image[:, :width, :]
-    return cropped_image
+    return image[:, :width, :]

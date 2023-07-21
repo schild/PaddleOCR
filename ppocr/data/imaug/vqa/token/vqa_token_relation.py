@@ -62,6 +62,5 @@ class VQAReTokenRelation(object):
     def get_relation_span(self, rel, entities):
         bound = []
         for entity_index in [rel["head"], rel["tail"]]:
-            bound.append(entities[entity_index]["start"])
-            bound.append(entities[entity_index]["end"])
+            bound.extend((entities[entity_index]["start"], entities[entity_index]["end"]))
         return min(bound), max(bound)

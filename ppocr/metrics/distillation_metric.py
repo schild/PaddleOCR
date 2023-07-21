@@ -37,7 +37,7 @@ class DistillationMetric(object):
         self.metrics = None
 
     def _init_metrcis(self, preds):
-        self.metrics = dict()
+        self.metrics = {}
         mod = importlib.import_module(__name__)
         for key in preds:
             self.metrics[key] = getattr(mod, self.base_metric_name)(
@@ -48,7 +48,7 @@ class DistillationMetric(object):
         assert isinstance(preds, dict)
         if self.metrics is None:
             self._init_metrcis(preds)
-        output = dict()
+        output = {}
         for key in preds:
             self.metrics[key].__call__(preds[key], batch, **kwargs)
 
@@ -59,15 +59,15 @@ class DistillationMetric(object):
                  'norm_edit_dis': 0,
             }
         """
-        output = dict()
+        output = {}
         for key in self.metrics:
             metric = self.metrics[key].get_metric()
             # main indicator
             if key == self.key:
-                output.update(metric)
+                output |= metric
             else:
                 for sub_key in metric:
-                    output["{}_{}".format(key, sub_key)] = metric[sub_key]
+                    output[f"{key}_{sub_key}"] = metric[sub_key]
         return output
 
     def reset(self):

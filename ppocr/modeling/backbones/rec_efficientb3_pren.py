@@ -70,10 +70,10 @@ class BlockDecoder:
     @staticmethod
     def decode(string_list):
         assert isinstance(string_list, list)
-        blocks_args = []
-        for block_string in string_list:
-            blocks_args.append(BlockDecoder._decode_block_string(block_string))
-        return blocks_args
+        return [
+            BlockDecoder._decode_block_string(block_string)
+            for block_string in string_list
+        ]
 
 
 def efficientnet(width_coefficient=None,
@@ -128,9 +128,7 @@ class EffUtils:
     def round_repeats(repeats, global_params):
         """ Round number of filters based on depth multiplier. """
         multiplier = global_params.depth_coefficient
-        if not multiplier:
-            return repeats
-        return int(math.ceil(multiplier * repeats))
+        return repeats if not multiplier else int(math.ceil(multiplier * repeats))
 
 
 class MbConvBlock(nn.Layer):
@@ -186,8 +184,7 @@ class MbConvBlock(nn.Layer):
         random_tensor += paddle.rand([batch_size, 1, 1, 1], dtype=inputs.dtype)
         random_tensor = paddle.to_tensor(random_tensor, place=inputs.place)
         binary_tensor = paddle.floor(random_tensor)
-        output = inputs / keep_prob * binary_tensor
-        return output
+        return inputs / keep_prob * binary_tensor
 
     def forward(self, inputs, drop_connect_rate=None):
         # expansion and depthwise conv

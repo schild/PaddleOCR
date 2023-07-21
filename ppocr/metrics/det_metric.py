@@ -135,7 +135,7 @@ class DetFCEMetric(object):
             #     metrics['{}_{}'.format(key, score_thr)] = value
             metric_str = 'precision:{:.5f} recall:{:.5f} hmean:{:.5f}'.format(
                 metric['precision'], metric['recall'], metric['hmean'])
-            metrics['thr {}'.format(score_thr)] = metric_str
+            metrics[f'thr {score_thr}'] = metric_str
             hmean = max(hmean, metric['hmean'])
         metrics['hmean'] = hmean
 

@@ -53,7 +53,7 @@ def batch_synth_images():
         for line in lines:
             substr = line.decode("utf-8").strip("\n").split("\t")
             corpus_list.append(substr)
-    style_img_list = glob.glob("{}/*.jpg".format(style_data_dir))
+    style_img_list = glob.glob(f"{style_data_dir}/*.jpg")
     corpus_num = len(corpus_list)
     style_img_num = len(style_img_list)
     for cno in range(corpus_num):
@@ -70,10 +70,10 @@ def batch_synth_images():
                     prefix = "%s/c%d_s%d_" % (save_path, cno, sno)
                 else:
                     prefix = "%s/s%d_c%d_" % (save_path, sno, cno)
-                cv2.imwrite("%s_fake_fusion.jpg" % prefix, fake_fusion)
-                cv2.imwrite("%s_fake_text.jpg" % prefix, fake_text)
-                cv2.imwrite("%s_fake_bg.jpg" % prefix, fake_bg)
-                cv2.imwrite("%s_input_style.jpg" % prefix, img)
+                cv2.imwrite(f"{prefix}_fake_fusion.jpg", fake_fusion)
+                cv2.imwrite(f"{prefix}_fake_text.jpg", fake_text)
+                cv2.imwrite(f"{prefix}_fake_bg.jpg", fake_bg)
+                cv2.imwrite(f"{prefix}_input_style.jpg", img)
             print(cno, corpus_num, sno, style_img_num)
 
 
